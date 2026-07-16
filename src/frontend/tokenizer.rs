@@ -27,7 +27,7 @@ pub struct Token {
 // Reimplementing println!("{}", token) in a more readable way.
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.text.is_empty() {
+        if self.content.is_empty() {
             write!(f, "[{}:{}] {:?}", self.line, self.column, self.token_type)
         }
         
@@ -35,7 +35,7 @@ impl fmt::Display for Token {
             write!(
                 f,
                 "[{}:{}] {:?} '{}'",
-                self.line, self.column, self.token_type, self.text
+                self.line, self.column, self.token_type, self.content
             )
         }
     }
@@ -288,7 +288,7 @@ impl Tokenizer {
                         line: start_line,
                         column: start_column,
                     });
-                    
+
                     expect = Expect::Any;
                 }
 
@@ -333,7 +333,7 @@ impl Tokenizer {
 
                 _ => {
                     let token = if expect == Expect::Value {
-                        self.read_value("|],}")?
+                        self.read_value("|],}>")?
                     } else {
                         self.read_identifier()?
                     };
