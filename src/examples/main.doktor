@@ -1,0 +1,35 @@
+[Collection: Reddit] {
+    [Group: header] {
+        [Image | source: images/text-logo.png]
+
+        [Group: search-bar] {
+            [Image | source: images/logo.png]
+
+            [
+                Input |
+                placeholder: Find anything |
+                maxLength: 32 |
+                minLength: 3
+            ]
+
+            [Button: ask-ai-button] {
+                [Image | source: images/strats.png]
+                [Text | content: Ask | <contentColor: red, backgroundColor: green>]
+            }
+        }
+
+        [Group: right-group] {
+            [Image | source: images/ad.png]
+            [Image | source: images/chat.png]
+            
+            [Button] {
+                [Image | source: images/plus.png]
+                [Text | content: Create]
+            }
+
+            [Image | source: images/bell.png]
+
+            [Image | source: images/avatar.png]
+        }
+    }
+}
