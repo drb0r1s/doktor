@@ -132,6 +132,13 @@ impl Tokenizer {
         }
     }
 
+    fn is_special(character: char) -> bool {
+        matches!(
+            character,
+            '[' | ']' | '{' | '}' | '<' | '>' | ':' | ',' | '|' | '\\'
+        )
+    }
+
     fn is_identifier(character: char) -> bool {
         character.is_alphanumeric() || character == '_' || character == '-'
     }
@@ -168,8 +175,24 @@ impl Tokenizer {
 
         let mut content = String::new();
 
-        while !self.is_end() && !terminators.contains(self.look_ahead(0)) {
-            content.push(self.advance());
+        while !self.is_end() {
+            let character: char = self.look_ahead(0);
+
+            // Escaping a special character.
+            if character == '\\' && Self::is_special(self.look_ahead(1)) {
+                self.advance(); // Advancing over backslash.
+                content.push(self.advance()); // Advancing over the escaped special character.
+            }
+            
+            // Terminating the reading of a value.
+            else if terminators.contains(character) {
+                break;
+            }
+            
+            // Ordinary character, advancing over it.
+            else {
+                content.push(self.advance());
+            }
         }
 
         let trimmed = content.trim_end().to_string();
