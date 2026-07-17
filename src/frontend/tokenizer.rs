@@ -333,7 +333,7 @@ impl Tokenizer {
 
                 _ => {
                     let token = if expect == Expect::Value {
-                        self.read_value("|],}>")?
+                        self.read_value("|],}>\n")?
                     } else {
                         self.read_identifier()?
                     };
