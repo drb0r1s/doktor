@@ -1,4 +1,5 @@
 use doktor::frontend::tokenizer::Tokenizer;
+use doktor::frontend::parser::Parser;
 use std::env;
 use std::fs;
 use std::process;
@@ -25,8 +26,17 @@ fn main() {
 
     match tokenizer.tokenize() {
         Ok(tokens) => {
-            for token in tokens {
-                println!("{}", token);
+            let parser: Parser = Parser::new(tokens);
+
+            match parser.parse() {
+                Ok(doktor_node) => {
+                    println!("{}", doktor_node);
+                }
+
+                Err(e) => {
+                    eprintln!("{}", e);
+                    process::exit(1);
+                }
             }
         }
 
