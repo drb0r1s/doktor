@@ -1,5 +1,6 @@
 use doktor::frontend::tokenizer::Tokenizer;
 use doktor::frontend::parser::Parser;
+use doktor::frontend::resolver::Resolver;
 use std::env;
 use std::fs;
 use std::process;
@@ -9,8 +10,7 @@ fn run(path: &str) -> Result<(), Box<dyn std::error::Error>> {
 
     let tokens = Tokenizer::new(&source).tokenize()?;
     let doktor_node = Parser::new(tokens).parse()?;
-
-    println!("{}", doktor_node);
+    let (resolved_doktor_node, warnings, errors) = Resolver::new().resolve(doktor_node);
     
     Ok(())
 }
