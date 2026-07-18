@@ -1,3 +1,5 @@
+use crate::middleend::layout::{Layout, Direction, Alignment};
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RGB {
     pub r: u8,
@@ -19,6 +21,15 @@ pub struct SystemAttributes {
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct SystemStyles {
+    pub layout: Option<Layout>, // simple, free
+    pub direction: Option<Direction>, // horizontal, vertical
+    pub alignment: Option<Alignment>, // start, center, end
+    pub alignment_x: Option<Alignment>,
+    pub alignment_y: Option<Alignment>,
+    pub width: Option<f32>,
+    pub height: Option<f32>,
+    pub x: Option<f32>,
+    pub y: Option<f32>,
     pub content_color: Option<RGB>,
     pub background_color: Option<RGB>,
 }

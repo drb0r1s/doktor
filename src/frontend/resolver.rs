@@ -3,6 +3,8 @@ use std::fmt;
 use crate::frontend::ast::{Attribute, Style, BlockNode, DoktorNode};
 use crate::frontend::resolved_ast::{RGB, SystemAttributes, SystemStyles, ResolvedBlockNode, ResolvedDoktorNode};
 
+use crate::middleend::layout::{Layout, Direction, Alignment};
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct SemanticWarning {
     pub message: String,
@@ -149,6 +151,75 @@ impl Resolver {
 
         for style in styles {
             let recognized: bool = match style.name.as_str() {
+                "layout" => {
+                    match style.value.as_str() {
+                        "simple" => system_styles.layout = Some(Layout::Simple),
+                        "free" => system_styles.layout = Some(Layout::Free),
+                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
+                "direction" => {
+                    match style.value.as_str() {
+                        "horizontal" => system_styles.direction = Some(Direction::Horizontal),
+                        "vertical" => system_styles.direction = Some(Direction::Vertical),
+                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
+                "alignment" => {
+                    match style.value.as_str() {
+                        "start" => system_styles.alignment = Some(Alignment::Start),
+                        "center" => system_styles.alignment = Some(Alignment::Center),
+                        "end" => system_styles.alignment = Some(Alignment::End),
+                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column)
+                    }
+
+                    true
+                }
+
+                "alignment_x" => {
+                    match style.value.as_str() {
+                        "start" => system_styles.alignment_x = Some(Alignment::Start),
+                        "center" => system_styles.alignment_x = Some(Alignment::Center),
+                        "end" => system_styles.alignment_x = Some(Alignment::End),
+                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column)
+                    }
+
+                    true
+                }
+
+                "alignment_y" => {
+                    match style.value.as_str() {
+                        "start" => system_styles.alignment_y = Some(Alignment::Start),
+                        "center" => system_styles.alignment_y = Some(Alignment::Center),
+                        "end" => system_styles.alignment_y = Some(Alignment::End),
+                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column)
+                    }
+
+                    true
+                }
+                
+                "width" => {
+                    match style.value.parse::<f32>() {
+                        Ok(value) => system_styles.width = Some(value),
+                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+                    true
+                }
+
+                "height" => {
+                    match style.value.parse::<f32>() {
+                        Ok(value) => system_styles.height = Some(value),
+                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+                    true
+                }
+
                 "content_color" => {
                     match Self::hex_to_rgb(&style.value) {
                         Some(color) => system_styles.content_color = Some(color),
