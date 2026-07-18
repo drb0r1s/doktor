@@ -2,23 +2,23 @@
     [Group: header] {
         [Image | source: images/text-logo.png]
 
-        [Group: search-bar] {
+        [Group: search_bar] {
             [Image | source: images/logo.png]
 
             [
                 Input |
                 placeholder: Find anything |
-                maxLength: 32 |
-                minLength: 3
+                max_length: 32 |
+                min_length: 3
             ]
 
             [Button: ask-ai-button] {
                 [Image | source: images/strats.png]
-                [Text | content: Ask | <contentColor: red, backgroundColor: green>]
+                [Text | content: Ask | <content_color: red, background_color: green>]
             }
         }
 
-        [Group: right-group] {
+        [Group: right_group] {
             [Image | source: images/ad.png]
             [Image | source: images/chat.png]
             
