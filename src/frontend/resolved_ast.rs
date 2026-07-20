@@ -28,8 +28,8 @@ pub struct SystemStyles {
     pub alignment_y: Option<Alignment>,
     pub width: Option<f32>,
     pub height: Option<f32>,
-    pub x: Option<f32>,
-    pub y: Option<f32>,
+    pub position_x: Option<f32>,
+    pub position_y: Option<f32>,
     pub content_color: Option<RGB>,
     pub background_color: Option<RGB>,
 }

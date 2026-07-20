@@ -1,6 +1,9 @@
 use doktor::frontend::tokenizer::Tokenizer;
 use doktor::frontend::parser::Parser;
 use doktor::frontend::resolver::Resolver;
+
+use doktor::middleend::shaper::Shaper;
+
 use std::env;
 use std::fs;
 use std::process;
@@ -11,6 +14,8 @@ fn run(path: &str) -> Result<(), Box<dyn std::error::Error>> {
     let tokens = Tokenizer::new(&source).tokenize()?;
     let doktor_node = Parser::new(tokens).parse()?;
     let (resolved_doktor_node, warnings, errors) = Resolver::new().resolve(doktor_node);
+
+    let drawable_doktor_node = Shaper::new(1024.0, 1024.0).shape(resolved_doktor_node);
     
     Ok(())
 }

@@ -3,6 +3,7 @@ pub const DEFAULT_DIRECTION: Direction = Direction::Horizontal;
 pub const DEFAULT_ALIGNMENT: Alignment = Alignment::Start;
 pub const DEFAULT_WIDTH: f32 = 100.0;
 pub const DEFAULT_HEIGHT: f32 = 100.0;
+pub const DEFAULT_LOCATION: f32 = 0.0;
 pub const DEFAULT_POSITION: f32 = 0.0;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -59,33 +60,31 @@ impl Default for Size {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct FreePosition {
+pub struct Location {
     pub x: f32,
     pub y: f32,
 }
 
-impl Default for FreePosition {
+impl Default for Location {
     fn default() -> Self {
-        FreePosition {
-            x: DEFAULT_POSITION,
-            y: DEFAULT_POSITION,
+        Location {
+            x: DEFAULT_LOCATION,
+            y: DEFAULT_LOCATION,
         }
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct LayoutNode {
-    pub block_type: String,
-    pub tag: String,
-    pub layout_properties: LayoutProperties,
-    pub size: Size,
-    pub free_position: FreePosition,
-    pub children: Vec<LayoutNode>,
-    pub line: usize,
-    pub column: usize,
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Position {
+    pub x: f32,
+    pub y: f32,
 }
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct LayoutDoktorNode {
-    pub children: Vec<LayoutNode>,
+ 
+impl Default for Position {
+    fn default() -> Self {
+        Position {
+            x: DEFAULT_POSITION,
+            y: DEFAULT_POSITION,
+        }
+    }
 }
