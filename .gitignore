@@ -1,2 +1,3 @@
-/target
-/src/out
+*/target
+*/out
+*/Cargo.lock

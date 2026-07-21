@@ -1,12 +1,12 @@
-use doktor::frontend::tokenizer::Tokenizer;
-use doktor::frontend::parser::Parser;
-use doktor::frontend::resolver::Resolver;
+use doktorc::frontend::tokenizer::Tokenizer;
+use doktorc::frontend::parser::Parser;
+use doktorc::frontend::resolver::Resolver;
 
-use doktor::middleend::shaper::Shaper;
-use doktor::middleend::painter::Painter;
+use doktorc::middleend::shaper::Shaper;
+use doktorc::middleend::painter::Painter;
 
-use doktor::backend::packer::Packer;
-use doktor::backend::doktorb_writer::DoktorbWriter;
+use doktorc::backend::packer::Packer;
+use doktorc::backend::doktorb_writer::DoktorbWriter;
 
 use std::env;
 use std::fs;
