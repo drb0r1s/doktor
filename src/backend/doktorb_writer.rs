@@ -4,7 +4,9 @@ use std::path::Path;
 
 use crate::backend::packer::{PACKET_SIZE, PackedPackets};
 
-const SIGNATURE: &[u8; 7] = b"DOKTORB";
+// SIGNATURE: DOKTORB as a multiple of 4.
+const SIGNATURE_FIRST: &[u8; 4] = b"DOKT";
+const SIGNATURE_SECOND: &[u8; 4] = b"ORB0";
 
 pub struct DoktorbWriter;
 
@@ -17,7 +19,8 @@ impl DoktorbWriter {
         let string_table_length: u32 = packed_packets.string_table.len() as u32;
 
         // Header: signature, draw structures count, string table length. Little-endian.
-        writer.write_all(SIGNATURE)?;
+        writer.write_all(SIGNATURE_FIRST)?;
+        writer.write_all(SIGNATURE_SECOND)?;
         writer.write_all(&draw_structures_count.to_le_bytes())?;
         writer.write_all(&string_table_length.to_le_bytes())?;
 
