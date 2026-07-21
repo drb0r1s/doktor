@@ -24,7 +24,9 @@ fn run(path: &str) -> Result<(), Box<dyn std::error::Error>> {
     let draw_structures = Painter::new().paint(drawable_doktor_node);
 
     let packed_packets = Packer::new().pack(&draw_structures);
-    DoktorbWriter::write_doktorb(&packed_packets, Path::new("src/out/compiled.doktorb"));
+    DoktorbWriter::write_doktorb(&packed_packets, &Path::new(env!("CARGO_MANIFEST_DIR")).join("src/out/compiled.doktorb"));
+
+    println!("done");
     
     Ok(())
 }
