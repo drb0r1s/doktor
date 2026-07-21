@@ -5,6 +5,8 @@ use doktor::frontend::resolver::Resolver;
 use doktor::middleend::shaper::Shaper;
 use doktor::middleend::painter::Painter;
 
+use doktor::backend::packer::Packer;
+
 use std::env;
 use std::fs;
 use std::process;
@@ -19,9 +21,7 @@ fn run(path: &str) -> Result<(), Box<dyn std::error::Error>> {
     let drawable_doktor_node = Shaper::new(1024.0, 1024.0).shape(resolved_doktor_node);
     let draw_structures = Painter::new().paint(drawable_doktor_node);
 
-    for draw_structure in &draw_structures {
-        println!("{:?}", draw_structure);
-    }
+    let packed_packets = Packer::new().pack(&draw_structures);
     
     Ok(())
 }
