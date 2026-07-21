@@ -1,6 +1,3 @@
 */target
-
-*/out
-compiled.doktorb
-
+*/src/out
 */Cargo.lock
