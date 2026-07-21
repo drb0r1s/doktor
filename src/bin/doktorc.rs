@@ -3,6 +3,7 @@ use doktor::frontend::parser::Parser;
 use doktor::frontend::resolver::Resolver;
 
 use doktor::middleend::shaper::Shaper;
+use doktor::middleend::painter::Painter;
 
 use std::env;
 use std::fs;
@@ -16,6 +17,11 @@ fn run(path: &str) -> Result<(), Box<dyn std::error::Error>> {
     let (resolved_doktor_node, warnings, errors) = Resolver::new().resolve(doktor_node);
 
     let drawable_doktor_node = Shaper::new(1024.0, 1024.0).shape(resolved_doktor_node);
+    let draw_structures = Painter::new().paint(drawable_doktor_node);
+
+    for draw_structure in &draw_structures {
+        println!("{:?}", draw_structure);
+    }
     
     Ok(())
 }
