@@ -1,4 +1,4 @@
-use std::fs::File;
+use std::fs;
 use std::io::{self, Write, BufWriter};
 use std::path::Path;
 
@@ -10,9 +10,15 @@ const SIGNATURE: &[u8; 8] = b"DOKTORB0";
 pub struct DoktorbWriter;
 
 impl DoktorbWriter {
-    pub fn write_doktorb(packed_packets: &PackedPackets, path: &Path) -> io::Result<()> {
-        let file: File = File::create(path)?;
-        let mut writer: BufWriter<File> = BufWriter::new(file);
+    pub fn write_doktorb(packed_packets: &PackedPackets, path_str: &str) -> io::Result<()> {
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join(path_str);
+
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+
+        let file: fs::File = fs::File::create(path)?;
+        let mut writer: BufWriter<fs::File> = BufWriter::new(file);
 
         let draw_structures_count: u32 = (packed_packets.numeric_buffer.len() / PACKET_SIZE) as u32;
         let string_table_length: u32 = packed_packets.string_table.len() as u32;

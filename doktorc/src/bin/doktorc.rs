@@ -11,7 +11,6 @@ use doktorc::backend::doktorb_writer::DoktorbWriter;
 use std::env;
 use std::fs;
 use std::process;
-use std::path::Path;
 
 fn run(path: &str) -> Result<(), Box<dyn std::error::Error>> {
     let source = fs::read_to_string(path)?;
@@ -24,7 +23,7 @@ fn run(path: &str) -> Result<(), Box<dyn std::error::Error>> {
     let draw_structures = Painter::new().paint(drawable_doktor_node);
 
     let packed_packets = Packer::new().pack(&draw_structures);
-    DoktorbWriter::write_doktorb(&packed_packets, &Path::new(env!("CARGO_MANIFEST_DIR")).join("src/out/compiled.doktorb"));
+    DoktorbWriter::write_doktorb(&packed_packets, "src/out/compiled.doktorb");
 
     println!("done");
     
