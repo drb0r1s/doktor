@@ -4,9 +4,33 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>DOKTOR</title>
+
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            #canvas-holder {
+                height: 1024px;
+                width: 1024px;
+                position: relative;
+            }
+
+            canvas {
+                position: absolute;
+                top: 0;
+                left: 0;
+            }
+        </style>
     </head>
 
     <body>
+        <div id="canvas-holder">
+            <canvas id="webgl-canvas" height="1024" width="1024"></canvas>
+        </div>
+
         <script type="module" src="./runDoktorr.js"></script>
     </body>
 </html>
