@@ -15,17 +15,19 @@ async function run() {
 
     const drawStructuresCount = numericBuffer.length / 16;
 
-    webglDraw(numericBuffer, drawStructuresCount);
+    await webglDraw(numericBuffer, stringTable, drawStructuresCount);
     textDraw(numericBuffer, stringTable, drawStructuresCount);
 }
 
 run().catch(console.error);
 
-function webglDraw(numericBuffer, drawStructuresCount) {
+async function webglDraw(numericBuffer, stringTable, drawStructuresCount) {
     const canvas = document.getElementById("webgl-canvas");
 
     const webglRenderer = new WebglRenderer(canvas);
-    webglRenderer.drawRectangles(numericBuffer, drawStructuresCount);
+
+    await webglRenderer.preloadTextures(numericBuffer, stringTable, drawStructuresCount);
+    webglRenderer.draw(numericBuffer, stringTable, drawStructuresCount);
 }
 
 function textDraw(numericBuffer, stringTable, drawStructuresCount) {
