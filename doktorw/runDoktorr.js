@@ -1,6 +1,6 @@
 import init, { parseDoktorb } from "../doktorr/pkg/doktorr.js";
-import { WebglRenderer } from "./webglRenderer.js";
-import { TextRenderer } from "./textRenderer.js";
+import { WebglRenderer } from "./renderers/webglRenderer.js";
+import { TextRenderer } from "./renderers/textRenderer.js";
 
 async function run() {
     await init(); // Loads .wasm, has to be written first.
