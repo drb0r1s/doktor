@@ -68,21 +68,37 @@ impl Shaper {
                 height: block.system_styles.height.unwrap_or(crate::middleend::layout::DEFAULT_HEIGHT),
             }
         } else {
-            // Not a leaf: width and height of the block are ignored, instead the size is determined based on the block's children.
+            // Not a leaf: width and height of the block are ignored (unless it is bigger than the minimal value), instead the size is determined based on the block's children.
             match layout_properties.layout {
                 Layout::Simple => match layout_properties.direction {
                     // width: sum of children widths
                     // height: max children height
-                    Direction::Horizontal => Size {
-                        width: sized_children.iter().map(|child| child.size.width).sum(),
-                        height: sized_children.iter().map(|child| child.size.height).fold(0.0, f32::max),
+                    Direction::Horizontal => {
+                        let minimal_width: f32 = sized_children.iter().map(|child| child.size.width).sum();
+                        let minimal_height: f32 = sized_children.iter().map(|child| child.size.height).fold(0.0, f32::max);
+
+                        let style_width: f32 = block.system_styles.width.unwrap_or(crate::middleend::layout::DEFAULT_WIDTH);
+                        let style_height: f32 = block.system_styles.height.unwrap_or(crate::middleend::layout::DEFAULT_HEIGHT);
+                        
+                        Size {
+                            width: minimal_width.max(style_width),
+                            height: minimal_height.max(style_height),
+                        }
                     },
 
                     // width: max children width
                     // height: sum of children heights
-                    Direction::Vertical => Size {
-                        width: sized_children.iter().map(|child| child.size.width).fold(0.0, f32::max),
-                        height: sized_children.iter().map(|child| child.size.height).sum(),
+                    Direction::Vertical => {
+                        let minimal_width: f32 = sized_children.iter().map(|child| child.size.width).fold(0.0, f32::max);
+                        let minimal_height: f32 = sized_children.iter().map(|child| child.size.height).sum();
+
+                        let style_width: f32 = block.system_styles.width.unwrap_or(crate::middleend::layout::DEFAULT_WIDTH);
+                        let style_height: f32 = block.system_styles.height.unwrap_or(crate::middleend::layout::DEFAULT_HEIGHT);
+                        
+                        Size {
+                            width: minimal_width.max(style_width),
+                            height: minimal_height.max(style_height),
+                        }
                     },
                 },
 
@@ -137,7 +153,7 @@ impl Shaper {
     fn locate_children(&self, children: &[SizedBlockNode], parent_layout: LayoutProperties, parent_location: Location, parent_size: Size) -> Vec<DrawableBlockNode> {
         match parent_layout.layout {
             Layout::Simple => {
-                self.organize_location(children, parent_layout.direction, parent_location, parent_size)
+                self.organize_location(children, parent_layout, parent_location, parent_size)
             },
 
             Layout::Free => children.iter().map(|child| {
@@ -154,48 +170,105 @@ impl Shaper {
         }
     }
 
-    fn organize_location(&self, children: &[SizedBlockNode], parent_direction: Direction, parent_location: Location, parent_size: Size) -> Vec<DrawableBlockNode> {
-        let mut result = Vec::with_capacity(children.len()); // We reserve children.len() positions in the vector.
+    fn organize_location(&self, children: &[SizedBlockNode], parent_layout: LayoutProperties, parent_location: Location, parent_size: Size) -> Vec<DrawableBlockNode> {
+        let parent_direction = parent_layout.direction;
 
+        let breakable_bound: f32 = match parent_direction {
+            Direction::Horizontal => parent_size.width,
+            Direction::Vertical => parent_size.height,
+        };
+
+        let mut lines: Vec<Vec<&SizedBlockNode>> = Vec::new();
+        let mut current_line: Vec<&SizedBlockNode> = Vec::new();
+        
         let mut breakable_cursor: f32 = 0.0;
-        let mut scrollable_cursor: f32 = 0.0;
-
-        let mut line_size: f32 = 0.0; // tallest/widest child in the current row/column
 
         for child in children {
-            let (breakable_size, scrollable_size): (f32, f32) = match parent_direction {
-                Direction::Horizontal => (child.size.width, child.size.height),
-                Direction::Vertical => (child.size.height, child.size.width),
+            let breakable_size: f32 = match parent_direction {
+                Direction::Horizontal => child.size.width,
+                Direction::Vertical => child.size.height,
             };
 
-            let breakable_bound: f32 = match parent_direction {
-                Direction::Horizontal => self.viewport_width,
-                Direction::Vertical => self.viewport_height,
-            };
+            let parent_breakable_location: f32 = get_breakable_parent_location(parent_location, parent_direction);
 
-            if breakable_cursor > 0.0 && get_breakable_parent_location(parent_location, parent_direction) + breakable_cursor + breakable_size > breakable_bound {
+            if breakable_cursor > 0.0 && parent_breakable_location + breakable_cursor + breakable_size > breakable_bound {
+                lines.push(std::mem::take(&mut current_line));
                 breakable_cursor = 0.0;
-                scrollable_cursor += line_size;
-
-                line_size = 0.0;
             }
 
-            let location: Location = match parent_direction {
-                Direction::Horizontal => Location {
-                    x: parent_location.x + breakable_cursor,
-                    y: parent_location.y + scrollable_cursor,
-                },
+            current_line.push(child);
+            breakable_cursor += breakable_size;
+        }
 
-                Direction::Vertical => Location {
-                    x: parent_location.x + scrollable_cursor,
-                    y: parent_location.y + breakable_cursor,
-                },
+        if !current_line.is_empty() {
+            lines.push(current_line);
+        }
+
+        let breakable_alignment: Alignment = match parent_direction {
+            Direction::Horizontal => parent_layout.alignment_x,
+            Direction::Vertical => parent_layout.alignment_y,
+        };
+
+        let scrollable_alignment: Alignment = match parent_direction {
+            Direction::Horizontal => parent_layout.alignment_y,
+            Direction::Vertical => parent_layout.alignment_x,
+        };
+
+        let mut result = Vec::with_capacity(children.len());
+        let mut scrollable_cursor: f32 = 0.0;
+
+        for line in &lines {
+            let line_breakable_size: f32 = line.iter().map(|child| match parent_direction {
+                Direction::Horizontal => child.size.width,
+                Direction::Vertical => child.size.height,
+            }).sum();
+
+            let line_scrollable_size: f32 = line.iter().map(|child| match parent_direction {
+                Direction::Horizontal => child.size.height,
+                Direction::Vertical => child.size.width,
+            }).fold(0.0, f32::max);
+
+            let line_breakable_leftover: f32 = (breakable_bound - get_breakable_parent_location(parent_location, parent_direction) - line_breakable_size).max(0.0);
+
+            let line_breakable_start_offset: f32 = match breakable_alignment {
+                Alignment::Start => 0.0,
+                Alignment::Center => line_breakable_leftover / 2.0,
+                Alignment::End => line_breakable_leftover,
             };
 
-            result.push(self.get_drawable_block_node(child, location));
+            let mut breakable_cursor: f32 = line_breakable_start_offset;
 
-            breakable_cursor += breakable_size;
-            line_size = line_size.max(scrollable_size);
+            for child in line {
+                let (breakable_size, scrollable_size): (f32, f32) = match parent_direction {
+                    Direction::Horizontal => (child.size.width, child.size.height),
+                    Direction::Vertical => (child.size.height, child.size.width),
+                };
+
+                let scrollable_leftover: f32 = (line_scrollable_size - scrollable_size).max(0.0);
+
+                let scrollable_offset: f32 = match scrollable_alignment {
+                    Alignment::Start => 0.0,
+                    Alignment::Center => scrollable_leftover / 2.0,
+                    Alignment::End => scrollable_leftover,
+                };
+
+                let location: Location = match parent_direction {
+                    Direction::Horizontal => Location {
+                        x: parent_location.x + breakable_cursor,
+                        y: parent_location.y + scrollable_cursor + scrollable_offset,
+                    },
+
+                    Direction::Vertical => Location {
+                        x: parent_location.x + scrollable_cursor + scrollable_offset,
+                        y: parent_location.y + breakable_cursor,
+                    },
+                };
+
+                result.push(self.get_drawable_block_node(child, location));
+                breakable_cursor += breakable_size;
+            }
+
+            scrollable_cursor += line_scrollable_size;
         }
 
         result
