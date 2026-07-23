@@ -1,3 +1,5 @@
+use serde::{Serialize, Deserialize};
+
 use crate::frontend::resolved_ast::RGB;
 
 pub const DEFAULT_LAYOUT: Layout = Layout::Simple;
@@ -10,19 +12,19 @@ pub const DEFAULT_POSITION: f32 = 0.0;
 pub const DEFAULT_FONT_SIZE: f32 = 16.0;
 pub const DEFAULT_CONTENT_COLOR: RGB = RGB { r: 0, g: 0, b: 0 };
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Layout {
     Simple,
     Free,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Direction {
     Horizontal,
     Vertical,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Alignment {
     Start,
     Center,

@@ -1,9 +1,10 @@
 use wasm_bindgen::prelude::*;
 use js_sys::{Float32Array, Uint8Array};
 
-use doktorc::backend::packer::PACKET_SIZE;
+use doktorc::middleend::shaper::Shaper;
+use doktorc::middleend::painter::Painter;
 
-const SIGNATURE: &[u8; 8] = b"DOKTORB0";
+use doktorc::backend::packer::Packer;
 
 #[wasm_bindgen]
 pub struct ParsedDoktorb {
@@ -24,51 +25,17 @@ impl ParsedDoktorb {
     }
 }
 
-#[wasm_bindgen(js_name = parseDoktorb)]
-pub fn parse_doktorb(bytes: &[u8]) -> Result<ParsedDoktorb, JsValue> {
-    if bytes.len() < SIGNATURE.len() + 4 + 4 {
-        return Err(JsValue::from_str("File too short to be a valid .doktorb file"));
-    }
+#[wasm_bindgen(js_name=compile)]
+pub fn compile(written_doktorb: &[u8], viewport_width: f32, viewport_height: f32) -> Result<ParsedDoktorb, JsValue> {
+    let resolved_doktor_node = bincode::deserialize(written_doktorb).map_err(|e| JsValue::from_str(&format!("Failed to deserialize: {e}")))?;
 
-    let signature: &[u8] = &bytes[0..SIGNATURE.len()];
+    let drawable_doktor_node = Shaper::new(viewport_width, viewport_height).shape(resolved_doktor_node);
+    let draw_structures = Painter::new().paint(drawable_doktor_node);
 
-    if signature != SIGNATURE {
-        return Err(JsValue::from_str("Invalid .doktorb signature"));
-    }
-
-    let mut cursor: usize = SIGNATURE.len();
-
-    let draw_structures_count: u32 = read_u32_le(bytes, cursor)?;
-    cursor += 4;
-
-    let string_table_length: u32 = read_u32_le(bytes, cursor)?;
-    cursor += 4;
-
-    let numeric_buffer_element_count: usize = draw_structures_count as usize * PACKET_SIZE;
-    let numeric_buffer_byte_length: usize = numeric_buffer_element_count * 4;
-
-    if bytes.len() < cursor + numeric_buffer_byte_length + string_table_length as usize {
-        return Err(JsValue::from_str("File shorter than header declares"));
-    }
-
-    let numeric_buffer: Vec<f32> = bytes[cursor..cursor + numeric_buffer_byte_length]
-        .chunks_exact(4)
-        .map(|chunk| f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]))
-        .collect();
-
-    cursor += numeric_buffer_byte_length;
-
-    let string_table: Vec<u8> = bytes[cursor..cursor + string_table_length as usize].to_vec();
+    let packed_packets = Packer::new().pack(&draw_structures);
 
     Ok(ParsedDoktorb {
-        numeric_buffer,
-        string_table,
+        numeric_buffer: packed_packets.numeric_buffer,
+        string_table: packed_packets.string_table,
     })
-}
-
-fn read_u32_le(bytes: &[u8], offset: usize) -> Result<u32, JsValue> {
-    let slice: &[u8] = bytes.get(offset..offset + 4)
-        .ok_or_else(|| JsValue::from_str("Unexpected end of file while reading header"))?;
-
-    Ok(u32::from_le_bytes([slice[0], slice[1], slice[2], slice[3]]))
 }

@@ -1,13 +1,15 @@
+use serde::{Serialize, Deserialize};
+
 use crate::middleend::layout::{Layout, Direction, Alignment};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RGB {
     pub r: u8,
     pub g: u8,
     pub b: u8,
 }
 
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SystemAttributes {
     // Image
     pub source: Option<String>,
@@ -19,7 +21,7 @@ pub struct SystemAttributes {
     pub min_length: Option<u32>,
 }
 
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SystemStyles {
     pub layout: Option<Layout>, // simple, free
     pub direction: Option<Direction>, // horizontal, vertical
@@ -34,7 +36,7 @@ pub struct SystemStyles {
     pub background_color: Option<RGB>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ResolvedBlockNode {
     pub block_type: String,
     pub tag: String,
@@ -47,7 +49,7 @@ pub struct ResolvedBlockNode {
     pub column: usize,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ResolvedDoktorNode {
     pub children: Vec<ResolvedBlockNode>,
 }

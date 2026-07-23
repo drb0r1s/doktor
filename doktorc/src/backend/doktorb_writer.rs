@@ -1,42 +1,22 @@
 use std::fs;
-use std::io::{self, Write, BufWriter};
+use std::io;
 use std::path::Path;
 
-use crate::backend::packer::{PACKET_SIZE, PackedPackets};
-
-// SIGNATURE: DOKTORB0 as a multiple of 4 (DOKT + ORB0).
-const SIGNATURE: &[u8; 8] = b"DOKTORB0";
+use crate::frontend::resolved_ast::{ResolvedDoktorNode};
 
 pub struct DoktorbWriter;
 
 impl DoktorbWriter {
-    pub fn write_doktorb(packed_packets: &PackedPackets, path_str: &str) -> io::Result<()> {
+    pub fn write_doktorb(resolved_doktor_node: &ResolvedDoktorNode, path_str: &str) -> io::Result<()> {
+        let bytes: Vec<u8> = bincode::serialize(&resolved_doktor_node).expect("Failed to serialize ResolvedDoktorNode.");
+        
         let path = Path::new(env!("CARGO_MANIFEST_DIR")).join(path_str);
 
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent)?;
         }
 
-        let file: fs::File = fs::File::create(path)?;
-        let mut writer: BufWriter<fs::File> = BufWriter::new(file);
-
-        let draw_structures_count: u32 = (packed_packets.numeric_buffer.len() / PACKET_SIZE) as u32;
-        let string_table_length: u32 = packed_packets.string_table.len() as u32;
-
-        // Header: signature, draw structures count, string table length. Little-endian.
-        writer.write_all(SIGNATURE)?;
-        writer.write_all(&draw_structures_count.to_le_bytes())?;
-        writer.write_all(&string_table_length.to_le_bytes())?;
-
-        // Numeric Buffer: raw f32 bytes. Little-endian.
-        for value in &packed_packets.numeric_buffer {
-            writer.write_all(&value.to_le_bytes())?;
-        }
-
-        // String table: raw UTF-8 bytes.
-        writer.write_all(&packed_packets.string_table)?;
-
-        writer.flush()?;
+        fs::write(path, bytes)?;
 
         Ok(())
     }

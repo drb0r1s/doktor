@@ -5,8 +5,8 @@
 }
 
 #canvas-holder {
-    height: 1024px;
-    width: 1024px;
+    height: 100dvh;
+    width: 100vw;
     position: relative;
 }
 
