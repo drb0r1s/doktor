@@ -178,6 +178,11 @@ impl Shaper {
             Direction::Vertical => parent_size.height,
         };
 
+        let parent_scrollable_size: f32 = match parent_direction {
+            Direction::Horizontal => parent_size.height,
+            Direction::Vertical => parent_size.width,
+        };
+
         let mut lines: Vec<Vec<&SizedBlockNode>> = Vec::new();
         let mut current_line: Vec<&SizedBlockNode> = Vec::new();
         
@@ -244,7 +249,7 @@ impl Shaper {
                     Direction::Vertical => (child.size.height, child.size.width),
                 };
 
-                let scrollable_leftover: f32 = (line_scrollable_size - scrollable_size).max(0.0);
+                let scrollable_leftover: f32 = (parent_scrollable_size - scrollable_size).max(0.0);
 
                 let scrollable_offset: f32 = match scrollable_alignment {
                     Alignment::Start => 0.0,
