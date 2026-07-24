@@ -209,6 +209,7 @@ impl Resolver {
                         Ok(value) => system_styles.width = Some(value),
                         Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
                     }
+
                     true
                 }
 
@@ -217,6 +218,34 @@ impl Resolver {
                         Ok(value) => system_styles.height = Some(value),
                         Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
                     }
+
+                    true
+                }
+
+                "position" => {
+                    match style.value.parse::<f32>() {
+                        Ok(value) => system_styles.position = Some(value),
+                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
+                "position_x" => {
+                    match style.value.parse::<f32>() {
+                        Ok(value) => system_styles.position_x = Some(value),
+                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
+                "position_y" => {
+                    match style.value.parse::<f32>() {
+                        Ok(value) => system_styles.position_y = Some(value),
+                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
                     true
                 }
 

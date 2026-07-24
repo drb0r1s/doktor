@@ -154,8 +154,8 @@ impl Shaper {
             },
 
             Layout::Free => children.iter().map(|child| {
-                let position_x: f32 = child.resolved_block_node.system_styles.position_x.unwrap_or(0.0);
-                let position_y: f32 = child.resolved_block_node.system_styles.position_y.unwrap_or(0.0);
+                let position_x: f32 = child.resolved_block_node.system_styles.position_x.or(child.resolved_block_node.system_styles.position).unwrap_or(0.0);
+                let position_y: f32 = child.resolved_block_node.system_styles.position_y.or(child.resolved_block_node.system_styles.position).unwrap_or(0.0);
 
                 let location: Location = Location {
                     x: parent_location.x + position_x,
