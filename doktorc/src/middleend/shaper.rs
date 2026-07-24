@@ -69,6 +69,9 @@ impl Shaper {
             }
         } else {
             // Not a leaf: width and height of the block are ignored (unless it is bigger than the minimal value), instead the size is determined based on the block's children.
+            let style_width: f32 = block.system_styles.width.unwrap_or(crate::middleend::layout::DEFAULT_WIDTH);
+            let style_height: f32 = block.system_styles.height.unwrap_or(crate::middleend::layout::DEFAULT_HEIGHT);
+            
             match layout_properties.layout {
                 Layout::Simple => match layout_properties.direction {
                     // width: sum of children widths
@@ -76,9 +79,6 @@ impl Shaper {
                     Direction::Horizontal => {
                         let minimal_width: f32 = sized_children.iter().map(|child| child.size.width).sum();
                         let minimal_height: f32 = sized_children.iter().map(|child| child.size.height).fold(0.0, f32::max);
-
-                        let style_width: f32 = block.system_styles.width.unwrap_or(crate::middleend::layout::DEFAULT_WIDTH);
-                        let style_height: f32 = block.system_styles.height.unwrap_or(crate::middleend::layout::DEFAULT_HEIGHT);
                         
                         Size {
                             width: minimal_width.max(style_width),
@@ -91,9 +91,6 @@ impl Shaper {
                     Direction::Vertical => {
                         let minimal_width: f32 = sized_children.iter().map(|child| child.size.width).fold(0.0, f32::max);
                         let minimal_height: f32 = sized_children.iter().map(|child| child.size.height).sum();
-
-                        let style_width: f32 = block.system_styles.width.unwrap_or(crate::middleend::layout::DEFAULT_WIDTH);
-                        let style_height: f32 = block.system_styles.height.unwrap_or(crate::middleend::layout::DEFAULT_HEIGHT);
                         
                         Size {
                             width: minimal_width.max(style_width),
@@ -117,8 +114,8 @@ impl Shaper {
                     }
 
                     Size {
-                        width: max_x,
-                        height: max_y,
+                        width: max_x.max(style_width),
+                        height: max_y.max(style_height),
                     }
                 }
             }
