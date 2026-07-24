@@ -256,6 +256,15 @@ impl Resolver {
                     true
                 }
 
+                "content_size" => {
+                    match style.value.parse::<f32>() {
+                        Ok(value) => system_styles.content_size = value,
+                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
                 "background_color" => {
                     match Self::hex_to_rgb(&style.value) {
                         Some(color) => system_styles.background_color = color,

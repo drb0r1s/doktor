@@ -1,8 +1,6 @@
 use crate::middleend::shaper_ast::{ShaperBlockNode, ShaperDoktorNode};
 use crate::middleend::painter_ast::{Rectangle, Text, Image, DrawStructure};
 
-use crate::data::default_values::{DEFAULT_FONT_SIZE};
-
 pub struct Painter;
 
 impl Painter {
@@ -52,7 +50,7 @@ impl Painter {
                 Some(DrawStructure::Text(Text {
                     location: block.location,
                     content,
-                    font_size: DEFAULT_FONT_SIZE,
+                    font_size: block.system_styles.content_size,
                     color: block.system_styles.content_color,
                 }))
             },

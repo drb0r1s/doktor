@@ -53,6 +53,7 @@ pub struct SystemStyles {
     pub position_x: Option<f32>,
     pub position_y: Option<f32>,
     pub content_color: RGB,
+    pub content_size: f32,
     pub background_color: RGB,
 }
 
@@ -70,6 +71,7 @@ impl SystemStyles {
             position_x: None,
             position_y: None,
             content_color: default_values::DEFAULT_CONTENT_COLOR,
+            content_size: default_values::DEFAULT_CONTENT_SIZE,
             background_color: default_values::DEFAULT_BACKGROUND_COLOR,
         }
     }

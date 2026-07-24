@@ -10,7 +10,7 @@ pub const DEFAULT_HEIGHT: f32 = 100.0;
 pub const DEFAULT_LOCATION: f32 = 0.0;
 pub const DEFAULT_POSITION: f32 = 0.0;
 
-pub const DEFAULT_FONT_SIZE: f32 = 16.0;
 pub const DEFAULT_CONTENT_COLOR: RGB = RGB { r: 0, g: 0, b: 0 };
+pub const DEFAULT_CONTENT_SIZE: f32 = 16.0;
 
 pub const DEFAULT_BACKGROUND_COLOR: RGB = RGB { r: 0, g: 0, b: 0 };
