@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::frontend::ast::{Attribute, Style, BlockNode, DoktorNode};
+use crate::frontend::parser_ast::{Attribute, Style, ParserBlockNode, ParserDoktorNode};
 use crate::frontend::tokenizer::{TokenType, Token};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -73,22 +73,22 @@ impl Parser {
         }
     }
 
-    pub fn parse(mut self) -> Result<DoktorNode, ParserError> {
-        let mut doktor_node: DoktorNode = DoktorNode::generate();
+    pub fn parse(mut self) -> Result<ParserDoktorNode, ParserError> {
+        let mut parser_doktor_node: ParserDoktorNode = ParserDoktorNode::generate();
 
         while !self.is_current_token_type(&TokenType::EndOfFile) {
-            let block: BlockNode = self.parse_block()?;
-            doktor_node.children.push(block);
+            let block: ParserBlockNode = self.parse_block()?;
+            parser_doktor_node.children.push(block);
         }
 
-        Ok(doktor_node)
+        Ok(parser_doktor_node)
     }
 
-    fn parse_block(&mut self) -> Result<BlockNode, ParserError> {
+    fn parse_block(&mut self) -> Result<ParserBlockNode, ParserError> {
         let block_start_token: Token = self.expect(TokenType::BlockStart, "to start a block")?;
         let identifier_token: Token = self.expect(TokenType::Identifier, "for block type")?;
 
-        let mut block_node = BlockNode {
+        let mut parser_block_node = ParserBlockNode {
             block_type: identifier_token.content,
             tag: String::new(),
             attributes: Vec::new(),
@@ -103,7 +103,7 @@ impl Parser {
             self.advance();
 
             let block_tag_token: Token = self.expect(TokenType::Value, "for block tag")?;
-            block_node.tag = block_tag_token.content;
+            parser_block_node.tag = block_tag_token.content;
         }
 
         // Attributes and Styles processing.
@@ -111,12 +111,12 @@ impl Parser {
             self.advance();
 
             if self.is_current_token_type(&TokenType::StyleStart) {
-                block_node.styles = self.parse_styles()?;
+                parser_block_node.styles = self.parse_styles()?;
             }
             
             else {
                 let attribute: Attribute = self.parse_attribute()?;
-                block_node.attributes.push(attribute);
+                parser_block_node.attributes.push(attribute);
             }
         }
 
@@ -127,14 +127,14 @@ impl Parser {
             self.advance();
 
             while !self.is_current_token_type(&TokenType::ChildrenEnd) {
-                let child_block_node: BlockNode = self.parse_block()?;
-                block_node.children.push(child_block_node);
+                let child_block_node: ParserBlockNode = self.parse_block()?;
+                parser_block_node.children.push(child_block_node);
             }
 
             self.expect(TokenType::ChildrenEnd, "to close a children block")?;
         }
 
-        Ok(block_node)
+        Ok(parser_block_node)
     }
 
     fn parse_attribute(&mut self) -> Result<Attribute, ParserError> {

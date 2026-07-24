@@ -1,6 +1,6 @@
-use crate::frontend::resolved_ast::RGB;
+use crate::frontend::resolver_ast::RGB;
 
-use crate::middleend::layout::Location;
+use crate::middleend::shaper_ast::Location;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Rectangle {

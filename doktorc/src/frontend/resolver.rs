@@ -1,9 +1,7 @@
 use std::fmt;
 
-use crate::frontend::ast::{Attribute, Style, BlockNode, DoktorNode};
-use crate::frontend::resolved_ast::{RGB, SystemAttributes, SystemStyles, ResolvedBlockNode, ResolvedDoktorNode};
-
-use crate::middleend::layout::{Layout, Direction, Alignment};
+use crate::frontend::parser_ast::{Attribute, Style, ParserBlockNode, ParserDoktorNode};
+use crate::frontend::resolver_ast::{RGB, Layout, Direction, Alignment, SystemAttributes, SystemStyles, ResolverBlockNode, ResolverDoktorNode};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct SemanticWarning {
@@ -56,43 +54,43 @@ impl Resolver {
         }
     }
 
-    pub fn resolve(mut self, doktor_node: DoktorNode) -> (ResolvedDoktorNode, Vec<SemanticWarning>, Vec<SemanticError>) {
-        let children = doktor_node.children.into_iter().map(|block_node| self.resolve_block(block_node)).collect();
+    pub fn resolve(mut self, parser_doktor_node: ParserDoktorNode) -> (ResolverDoktorNode, Vec<SemanticWarning>, Vec<SemanticError>) {
+        let children = parser_doktor_node.children.into_iter().map(|parser_block_node| self.resolve_block(parser_block_node)).collect();
 
-        (ResolvedDoktorNode { children }, self.warnings, self.errors)
+        (ResolverDoktorNode { children }, self.warnings, self.errors)
     }
 
-    fn resolve_block(&mut self, block_node: BlockNode) -> ResolvedBlockNode {
-        let resolved_block_type: &str = if SYSTEM_BLOCK_TYPES.contains(&block_node.block_type.as_str()) {
-            &block_node.block_type
+    fn resolve_block(&mut self, parser_block_node: ParserBlockNode) -> ResolverBlockNode {
+        let resolved_block_type: &str = if SYSTEM_BLOCK_TYPES.contains(&parser_block_node.block_type.as_str()) {
+            &parser_block_node.block_type
         } else {
             self.errors.push(SemanticError {
                 message: format!(
                     "Unrecognized block type '{}', treating it as 'Group'",
-                    block_node.block_type
+                    parser_block_node.block_type
                 ),
-                line: block_node.line,
-                column: block_node.column,
+                line: parser_block_node.line,
+                column: parser_block_node.column,
             });
 
             "Group"
         };
 
-        let (system_attributes, arbitrary_attributes) = self.resolve_attributes(resolved_block_type, block_node.attributes);
-        let (system_styles, arbitrary_styles) = self.resolve_styles(block_node.styles);
+        let (system_attributes, arbitrary_attributes) = self.resolve_attributes(resolved_block_type, parser_block_node.attributes);
+        let (system_styles, arbitrary_styles) = self.resolve_styles(parser_block_node.styles);
 
-        let children = block_node.children.into_iter().map(|child_node| self.resolve_block(child_node)).collect();
+        let children = parser_block_node.children.into_iter().map(|child_node| self.resolve_block(child_node)).collect();
 
-        ResolvedBlockNode {
-            block_type: block_node.block_type,
-            tag: block_node.tag,
+        ResolverBlockNode {
+            block_type: parser_block_node.block_type,
+            tag: parser_block_node.tag,
             system_attributes,
             arbitrary_attributes,
             system_styles,
             arbitrary_styles,
             children,
-            line: block_node.line,
-            column: block_node.column,
+            line: parser_block_node.line,
+            column: parser_block_node.column,
         }
     }
 
@@ -153,8 +151,8 @@ impl Resolver {
             let recognized: bool = match style.name.as_str() {
                 "layout" => {
                     match style.value.as_str() {
-                        "simple" => system_styles.layout = Some(Layout::Simple),
-                        "free" => system_styles.layout = Some(Layout::Free),
+                        "simple" => system_styles.layout = Layout::Simple,
+                        "free" => system_styles.layout = Layout::Free,
                         _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
                     }
 
@@ -163,8 +161,8 @@ impl Resolver {
 
                 "direction" => {
                     match style.value.as_str() {
-                        "horizontal" => system_styles.direction = Some(Direction::Horizontal),
-                        "vertical" => system_styles.direction = Some(Direction::Vertical),
+                        "horizontal" => system_styles.direction = Direction::Horizontal,
+                        "vertical" => system_styles.direction = Direction::Vertical,
                         _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
                     }
 
@@ -173,9 +171,9 @@ impl Resolver {
 
                 "alignment" => {
                     match style.value.as_str() {
-                        "start" => system_styles.alignment = Some(Alignment::Start),
-                        "center" => system_styles.alignment = Some(Alignment::Center),
-                        "end" => system_styles.alignment = Some(Alignment::End),
+                        "start" => system_styles.alignment = Alignment::Start,
+                        "center" => system_styles.alignment = Alignment::Center,
+                        "end" => system_styles.alignment = Alignment::End,
                         _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column)
                     }
 
@@ -206,7 +204,7 @@ impl Resolver {
                 
                 "width" => {
                     match style.value.parse::<f32>() {
-                        Ok(value) => system_styles.width = Some(value),
+                        Ok(value) => system_styles.width = value,
                         Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
                     }
 
@@ -215,7 +213,7 @@ impl Resolver {
 
                 "height" => {
                     match style.value.parse::<f32>() {
-                        Ok(value) => system_styles.height = Some(value),
+                        Ok(value) => system_styles.height = value,
                         Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
                     }
 
@@ -224,7 +222,7 @@ impl Resolver {
 
                 "position" => {
                     match style.value.parse::<f32>() {
-                        Ok(value) => system_styles.position = Some(value),
+                        Ok(value) => system_styles.position = value,
                         Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
                     }
 
@@ -251,7 +249,7 @@ impl Resolver {
 
                 "content_color" => {
                     match Self::hex_to_rgb(&style.value) {
-                        Some(color) => system_styles.content_color = Some(color),
+                        Some(color) => system_styles.content_color = color,
                         None => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
                     }
 
@@ -260,7 +258,7 @@ impl Resolver {
 
                 "background_color" => {
                     match Self::hex_to_rgb(&style.value) {
-                        Some(color) => system_styles.background_color = Some(color),
+                        Some(color) => system_styles.background_color = color,
                         None => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
                     }
 

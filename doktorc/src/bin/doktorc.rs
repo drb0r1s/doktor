@@ -12,10 +12,10 @@ fn run(path: &str) -> Result<(), Box<dyn std::error::Error>> {
     let source = fs::read_to_string(path)?;
 
     let tokens = Tokenizer::new(&source).tokenize()?;
-    let doktor_node = Parser::new(tokens).parse()?;
-    let (resolved_doktor_node, warnings, errors) = Resolver::new().resolve(doktor_node);
+    let parser_doktor_node = Parser::new(tokens).parse()?;
+    let (resolver_doktor_node, warnings, errors) = Resolver::new().resolve(parser_doktor_node);
 
-    DoktorbWriter::write_doktorb(&resolved_doktor_node, "src/out/compiled.doktorb");
+    DoktorbWriter::write_doktorb(&resolver_doktor_node, "src/out/compiled.doktorb");
 
     println!("done");
     

@@ -17,26 +17,26 @@ pub struct Style {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct BlockNode {
+pub struct ParserBlockNode {
     pub block_type: String,
     pub tag: String,
     pub attributes: Vec<Attribute>,
     pub styles: Vec<Style>,
-    pub children: Vec<BlockNode>,
+    pub children: Vec<ParserBlockNode>,
     pub line: usize,
     pub column: usize,
 }
 
 // Root of the AST.
 #[derive(Debug, Clone, PartialEq)]
-pub struct DoktorNode {
+pub struct ParserDoktorNode {
     pub block_type: String,
-    pub children: Vec<BlockNode>,
+    pub children: Vec<ParserBlockNode>,
 }
 
-impl DoktorNode {
+impl ParserDoktorNode {
     pub fn generate() -> Self {
-        DoktorNode {
+        ParserDoktorNode {
             block_type: String::from("Doktor"),
             children: Vec::new(),
         }
@@ -45,7 +45,7 @@ impl DoktorNode {
 
 // Display adjustments.
 
-impl fmt::Display for DoktorNode {
+impl fmt::Display for ParserDoktorNode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for child in &self.children {
             child.write_indented(f, 0)?;
@@ -55,13 +55,13 @@ impl fmt::Display for DoktorNode {
     }
 }
 
-impl fmt::Display for BlockNode {
+impl fmt::Display for ParserBlockNode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.write_indented(f, 0)
     }
 }
 
-impl BlockNode {
+impl ParserBlockNode {
     fn write_indented(&self, f: &mut fmt::Formatter<'_>, depth: usize) -> fmt::Result {
         let padding: String = "  ".repeat(depth);
 

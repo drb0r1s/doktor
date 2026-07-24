@@ -1,5 +1,5 @@
 pub mod tokenizer;
-pub mod ast;
+pub mod parser_ast;
 pub mod parser;
-pub mod resolved_ast;
+pub mod resolver_ast;
 pub mod resolver;

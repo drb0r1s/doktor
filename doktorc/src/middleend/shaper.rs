@@ -1,17 +1,11 @@
-use crate::frontend::resolved_ast::{ResolvedBlockNode, ResolvedDoktorNode};
+use crate::frontend::resolver_ast::{SystemStyles, Alignment, Direction, Layout, ResolverBlockNode, ResolverDoktorNode};
 
-use crate::middleend::layout::{Alignment, Direction, Layout, LayoutProperties, Location, Size};
-use crate::middleend::drawable::{DrawableBlockNode, DrawableDoktorNode};
+use crate::middleend::shaper_ast::{Size, Location, ShaperBlockNode, ShaperDoktorNode};
 
-struct SizedBlockNode {
-    block_type: String,
-    tag: String,
-    resolved_block_node: ResolvedBlockNode,
-    layout_properties: LayoutProperties,
+struct SizedResolverBlockNode {
+    resolver_block_node: ResolverBlockNode,
     size: Size,
-    children: Vec<SizedBlockNode>,
-    line: usize,
-    column: usize,
+    children: Vec<SizedResolverBlockNode>,
 }
 
 pub struct Shaper {
@@ -27,22 +21,18 @@ impl Shaper {
         }
     }
 
-    pub fn shape(&self, resolved_doktor_node: ResolvedDoktorNode) -> DrawableDoktorNode {
+    pub fn shape(&self, resolver_doktor_node: ResolverDoktorNode) -> ShaperDoktorNode {
         // Pass 1: bottom-up sizing.
-        let sized_children: Vec<SizedBlockNode> = resolved_doktor_node.children.into_iter().map(|resolved_block_node| self.size_block(resolved_block_node)).collect();
+        let sized_children: Vec<SizedResolverBlockNode> = resolver_doktor_node.children.into_iter().map(|resolver_block_node| self.size_block(resolver_block_node)).collect();
 
         // Pass 2: top-down location defining.
         // Setting default layout properties for the doktor node (root).
-        let doktor_node_layout: LayoutProperties = LayoutProperties {
-            layout: Layout::Simple,
-            direction: Direction::Horizontal,
-            alignment_x: Alignment::Start,
-            alignment_y: Alignment::Start,
-        };
 
-        let children: Vec<DrawableBlockNode> = self.locate_children(
+        let resolver_doktor_node_system_styles: SystemStyles = SystemStyles::default();
+
+        let children: Vec<ShaperBlockNode> = self.locate_children(
             &sized_children,
-            doktor_node_layout,
+            &resolver_doktor_node_system_styles,
             Location { x: 0.0, y: 0.0 },
             Size {
                 width: self.viewport_width,
@@ -50,30 +40,28 @@ impl Shaper {
             },
         );
 
-        DrawableDoktorNode { children }
+        ShaperDoktorNode { children }
     }
 
     // Pass 1: bottom-up sizing.
 
-    fn size_block(&self, mut block: ResolvedBlockNode) -> SizedBlockNode {
-        let children: Vec<ResolvedBlockNode> = std::mem::take(&mut block.children);
-        let sized_children: Vec<SizedBlockNode> = children.into_iter().map(|child| self.size_block(child)).collect();
-
-        let layout_properties: LayoutProperties = Self::resolve_layout_properties(&block.system_styles); // Assigning layout properties, the ones in system_styles or default.
+    fn size_block(&self, mut block: ResolverBlockNode) -> SizedResolverBlockNode {
+        let children: Vec<ResolverBlockNode> = std::mem::take(&mut block.children);
+        let sized_children: Vec<SizedResolverBlockNode> = children.into_iter().map(|child| self.size_block(child)).collect();
 
         let size: Size = if sized_children.is_empty() {
             // Leaf: fixed size from its own width and height, or default.
             Size {
-                width: block.system_styles.width.unwrap_or(crate::middleend::layout::DEFAULT_WIDTH),
-                height: block.system_styles.height.unwrap_or(crate::middleend::layout::DEFAULT_HEIGHT),
+                width: block.system_styles.width,
+                height: block.system_styles.height,
             }
         } else {
             // Not a leaf: width and height of the block are ignored (unless it is bigger than the minimal value), instead the size is determined based on the block's children.
-            let style_width: f32 = block.system_styles.width.unwrap_or(crate::middleend::layout::DEFAULT_WIDTH);
-            let style_height: f32 = block.system_styles.height.unwrap_or(crate::middleend::layout::DEFAULT_HEIGHT);
+            let style_width: f32 = block.system_styles.width;
+            let style_height: f32 = block.system_styles.height;
             
-            match layout_properties.layout {
-                Layout::Simple => match layout_properties.direction {
+            match block.system_styles.layout {
+                Layout::Simple => match block.system_styles.direction {
                     // width: sum of children widths
                     // height: max children height
                     Direction::Horizontal => {
@@ -106,8 +94,8 @@ impl Shaper {
                     let mut max_y: f32 = 0.0;
 
                     for child in &sized_children {
-                        let position_x: f32 = child.resolved_block_node.system_styles.position_x.unwrap_or(0.0);
-                        let position_y: f32 = child.resolved_block_node.system_styles.position_y.unwrap_or(0.0);
+                        let position_x: f32 = child.resolver_block_node.system_styles.position_x.unwrap_or(0.0);
+                        let position_y: f32 = child.resolver_block_node.system_styles.position_y.unwrap_or(0.0);
 
                         max_x = max_x.max(position_x + child.size.width);
                         max_y = max_y.max(position_y + child.size.height);
@@ -121,54 +109,37 @@ impl Shaper {
             }
         };
 
-        SizedBlockNode {
-            block_type: block.block_type.clone(),
-            tag: block.tag.clone(),
-            layout_properties,
+        SizedResolverBlockNode {
+            resolver_block_node: block,
             size,
-            line: block.line,
-            column: block.column,
-            resolved_block_node: block,
             children: sized_children,
-        }
-    }
-
-    fn resolve_layout_properties(styles: &crate::frontend::resolved_ast::SystemStyles) -> LayoutProperties {
-        let alignment_x: Alignment = styles.alignment_x.or(styles.alignment).unwrap_or(crate::middleend::layout::DEFAULT_ALIGNMENT);
-        let alignment_y: Alignment = styles.alignment_y.or(styles.alignment).unwrap_or(crate::middleend::layout::DEFAULT_ALIGNMENT);
-
-        LayoutProperties {
-            layout: styles.layout.unwrap_or(crate::middleend::layout::DEFAULT_LAYOUT),
-            direction: styles.direction.unwrap_or(crate::middleend::layout::DEFAULT_DIRECTION),
-            alignment_x,
-            alignment_y,
         }
     }
 
     // Pass 2: top-down location defining.
 
-    fn locate_children(&self, children: &[SizedBlockNode], parent_layout: LayoutProperties, parent_location: Location, parent_size: Size) -> Vec<DrawableBlockNode> {
-        match parent_layout.layout {
+    fn locate_children(&self, children: &Vec<SizedResolverBlockNode>, parent_styles: &SystemStyles, parent_location: Location, parent_size: Size) -> Vec<ShaperBlockNode> {
+        match parent_styles.layout {
             Layout::Simple => {
-                self.organize_location(children, parent_layout, parent_location, parent_size)
+                self.organize_location(children, parent_styles, parent_location, parent_size)
             },
 
             Layout::Free => children.iter().map(|child| {
-                let position_x: f32 = child.resolved_block_node.system_styles.position_x.or(child.resolved_block_node.system_styles.position).unwrap_or(0.0);
-                let position_y: f32 = child.resolved_block_node.system_styles.position_y.or(child.resolved_block_node.system_styles.position).unwrap_or(0.0);
+                let position_x: f32 = child.resolver_block_node.system_styles.position_x.or(Some(child.resolver_block_node.system_styles.position)).unwrap_or(0.0);
+                let position_y: f32 = child.resolver_block_node.system_styles.position_y.or(Some(child.resolver_block_node.system_styles.position)).unwrap_or(0.0);
 
                 let location: Location = Location {
                     x: parent_location.x + position_x,
                     y: parent_location.y + position_y,
                 };
 
-                self.get_drawable_block_node(child, location)
+                self.get_shaper_block_node(child, location)
             }).collect()
         }
     }
 
-    fn organize_location(&self, children: &[SizedBlockNode], parent_layout: LayoutProperties, parent_location: Location, parent_size: Size) -> Vec<DrawableBlockNode> {
-        let parent_direction = parent_layout.direction;
+    fn organize_location(&self, children: &[SizedResolverBlockNode], parent_styles: &SystemStyles, parent_location: Location, parent_size: Size) -> Vec<ShaperBlockNode> {
+        let parent_direction = parent_styles.direction;
 
         let breakable_bound: f32 = match parent_direction {
             Direction::Horizontal => parent_size.width,
@@ -180,8 +151,8 @@ impl Shaper {
             Direction::Vertical => parent_size.width,
         };
 
-        let mut lines: Vec<Vec<&SizedBlockNode>> = Vec::new();
-        let mut current_line: Vec<&SizedBlockNode> = Vec::new();
+        let mut lines: Vec<Vec<&SizedResolverBlockNode>> = Vec::new();
+        let mut current_line: Vec<&SizedResolverBlockNode> = Vec::new();
         
         let mut breakable_cursor: f32 = 0.0;
 
@@ -207,13 +178,13 @@ impl Shaper {
         }
 
         let breakable_alignment: Alignment = match parent_direction {
-            Direction::Horizontal => parent_layout.alignment_x,
-            Direction::Vertical => parent_layout.alignment_y,
+            Direction::Horizontal => parent_styles.get_unambiguous_alignment("x"),
+            Direction::Vertical => parent_styles.get_unambiguous_alignment("y"),
         };
 
         let scrollable_alignment: Alignment = match parent_direction {
-            Direction::Horizontal => parent_layout.alignment_y,
-            Direction::Vertical => parent_layout.alignment_x,
+            Direction::Horizontal => parent_styles.get_unambiguous_alignment("y"),
+            Direction::Vertical => parent_styles.get_unambiguous_alignment("x"),
         };
 
         let mut result = Vec::with_capacity(children.len());
@@ -266,7 +237,7 @@ impl Shaper {
                     },
                 };
 
-                result.push(self.get_drawable_block_node(child, location));
+                result.push(self.get_shaper_block_node(child, location));
                 breakable_cursor += breakable_size;
             }
 
@@ -276,22 +247,21 @@ impl Shaper {
         result
     }
 
-    fn get_drawable_block_node(&self, sized_block_node: &SizedBlockNode, location: Location) -> DrawableBlockNode {
-        let children: Vec<DrawableBlockNode> = self.locate_children(&sized_block_node.children, sized_block_node.layout_properties, location, sized_block_node.size);
+    fn get_shaper_block_node(&self, sized_resolver_block_node: &SizedResolverBlockNode, location: Location) -> ShaperBlockNode {
+        let children: Vec<ShaperBlockNode> = self.locate_children(&sized_resolver_block_node.children, &sized_resolver_block_node.resolver_block_node.system_styles, location, sized_resolver_block_node.size);
 
-        DrawableBlockNode {
-            block_type: sized_block_node.block_type.clone(),
-            tag: sized_block_node.tag.clone(),
-            system_attributes: sized_block_node.resolved_block_node.system_attributes.clone(),
-            arbitrary_attributes: sized_block_node.resolved_block_node.arbitrary_attributes.clone(),
-            system_styles: sized_block_node.resolved_block_node.system_styles.clone(),
-            arbitrary_styles: sized_block_node.resolved_block_node.arbitrary_styles.clone(),
-            layout_properties: sized_block_node.layout_properties,
-            size: sized_block_node.size,
+        ShaperBlockNode {
+            block_type: sized_resolver_block_node.resolver_block_node.block_type.clone(),
+            tag: sized_resolver_block_node.resolver_block_node.tag.clone(),
+            system_attributes: sized_resolver_block_node.resolver_block_node.system_attributes.clone(),
+            arbitrary_attributes: sized_resolver_block_node.resolver_block_node.arbitrary_attributes.clone(),
+            system_styles: sized_resolver_block_node.resolver_block_node.system_styles.clone(),
+            arbitrary_styles: sized_resolver_block_node.resolver_block_node.arbitrary_styles.clone(),
+            size: sized_resolver_block_node.size,
             location,
             children,
-            line: sized_block_node.line,
-            column: sized_block_node.column,
+            line: sized_resolver_block_node.resolver_block_node.line,
+            column: sized_resolver_block_node.resolver_block_node.column,
         }
     }
 }

@@ -1,5 +1,7 @@
-use crate::middleend::drawable::{DrawableBlockNode, DrawableDoktorNode};
+use crate::middleend::shaper_ast::{ShaperBlockNode, ShaperDoktorNode};
 use crate::middleend::painter_ast::{Rectangle, Text, Image, DrawStructure};
+
+use crate::data::default_values::{DEFAULT_FONT_SIZE};
 
 pub struct Painter;
 
@@ -8,17 +10,17 @@ impl Painter {
         Painter
     }
 
-    pub fn paint(&self, drawable_doktor_node: DrawableDoktorNode) -> Vec<DrawStructure> {
+    pub fn paint(&self, shaper_doktor_node: ShaperDoktorNode) -> Vec<DrawStructure> {
         let mut draw_structures: Vec<DrawStructure> = Vec::new();
 
-        for child in &drawable_doktor_node.children {
+        for child in &shaper_doktor_node.children {
             self.paint_block(child, &mut draw_structures);
         }
 
         draw_structures
     }
 
-    fn paint_block(&self, block: &DrawableBlockNode, draw_structures: &mut Vec<DrawStructure>) {
+    fn paint_block(&self, block: &ShaperBlockNode, draw_structures: &mut Vec<DrawStructure>) {
         if let Some(draw_structure) = self.block_to_draw_structure(block) {
             draw_structures.push(draw_structure);
         }
@@ -28,7 +30,7 @@ impl Painter {
         }
     }
 
-    fn block_to_draw_structure(&self, block: &DrawableBlockNode) -> Option<DrawStructure> {
+    fn block_to_draw_structure(&self, block: &ShaperBlockNode) -> Option<DrawStructure> {
         match block.block_type.as_str() {
             "Image" => {
                 let source: String = match &block.system_attributes.source {
@@ -50,13 +52,13 @@ impl Painter {
                 Some(DrawStructure::Text(Text {
                     location: block.location,
                     content,
-                    font_size: crate::middleend::layout::DEFAULT_FONT_SIZE,
-                    color: block.system_styles.content_color.unwrap_or(crate::middleend::layout::DEFAULT_CONTENT_COLOR),
+                    font_size: DEFAULT_FONT_SIZE,
+                    color: block.system_styles.content_color,
                 }))
             },
 
             _ => {
-                let color = block.system_styles.background_color.unwrap_or(crate::middleend::layout::DEFAULT_CONTENT_COLOR);
+                let color = block.system_styles.background_color;
 
                 Some(DrawStructure::Rectangle(Rectangle {
                     location: block.location,
