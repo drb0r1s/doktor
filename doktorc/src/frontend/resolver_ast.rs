@@ -28,6 +28,25 @@ pub enum Alignment {
     End,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Font {
+    Arial,
+    Helvetica,
+    Verdana,
+    Tahoma,
+    TrebuchetMS,
+    SegoeUI,
+    Georgia,
+    TimesNewRoman,
+    Garamond,
+    Baskerville,
+    CourierNew,
+    Consolas,
+    SansSerif,
+    Serif,
+    Monospace,
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SystemAttributes {
     // Image
@@ -54,6 +73,7 @@ pub struct SystemStyles {
     pub position_y: Option<f32>,
     pub content_color: RGB,
     pub content_size: f32,
+    pub content_font: Font
     pub background_color: RGB,
 }
 
@@ -72,6 +92,7 @@ impl SystemStyles {
             position_y: None,
             content_color: default_values::DEFAULT_CONTENT_COLOR,
             content_size: default_values::DEFAULT_CONTENT_SIZE,
+            content_font: default_values::DEFAULT_CONTENT_FONT,
             background_color: default_values::DEFAULT_BACKGROUND_COLOR,
         }
     }
