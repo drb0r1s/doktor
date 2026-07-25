@@ -1,7 +1,7 @@
 use std::fmt;
 
 use crate::frontend::parser_ast::{Attribute, Style, ParserBlockNode, ParserDoktorNode};
-use crate::frontend::resolver_ast::{RGB, Layout, Direction, Alignment, parse_font, SystemAttributes, SystemStyles, ResolverBlockNode, ResolverDoktorNode};
+use crate::frontend::resolver_ast::{RGB, Layout, Direction, Alignment, parse_font, BorderType, SystemAttributes, SystemStyles, ResolverBlockNode, ResolverDoktorNode};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct SemanticWarning {
@@ -282,7 +282,38 @@ impl Resolver {
 
                     true
                 }
-                _ => false,
+
+                "border_color" => {
+                    match Self::hex_to_rgb(&style.value) {
+                        Some(color) => system_styles.border_color = color,
+                        None => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
+                "border_size" => {
+                    match style.value.parse::<f32>() {
+                        Ok(value) => system_styles.border_size = value,
+                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
+                "border_type" => {
+                    match style.value.as_str() {
+                        "none" => system_styles.border_type = BorderType::None,
+                        "solid" => system_styles.border_type = BorderType::Solid,
+                        "dashed" => system_styles.border_type = BorderType::Dashed,
+                        "dotted" => system_styles.border_type = BorderType::Dotted,
+                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column)
+                    }
+
+                    true
+                }
+
+                _ => false
             };
 
             if !recognized {

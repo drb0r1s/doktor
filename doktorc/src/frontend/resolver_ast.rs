@@ -69,6 +69,13 @@ pub fn parse_font(value: &str) -> Option<Font> {
     FONT_NAMES.iter().find(|(name, _)| *name == value).map(|(_, font)| *font)
 }
 
+pub enum BorderType {
+    None,
+    Solid,
+    Dashed,
+    Dotted,
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SystemAttributes {
     // Image
@@ -97,6 +104,9 @@ pub struct SystemStyles {
     pub content_size: f32,
     pub content_font: Font,
     pub background_color: RGB,
+    pub border_color: RGB,
+    pub border_size: f32,
+    pub border_type: BorderType
 }
 
 impl SystemStyles {
@@ -116,6 +126,9 @@ impl SystemStyles {
             content_size: default_values::DEFAULT_CONTENT_SIZE,
             content_font: default_values::DEFAULT_CONTENT_FONT,
             background_color: default_values::DEFAULT_BACKGROUND_COLOR,
+            border_color: default_values::DEFAULT_BORDER_COLOR,
+            border_size: default_values::DEFAULT_BORDER_SIZE,
+            border_type: default_values::DEFAULT_BORDER_TYPE,
         }
     }
 

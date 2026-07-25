@@ -3,7 +3,9 @@ import { PACKET_STRUCTURE } from "../data/packetStructure.js";
 
 const RECTANGLE_VERTEX_SHADER_SOURCE = `
     attribute vec2 a_position;
+    attribute vec2 a_localPosition;
     uniform vec2 u_resolution;
+    varying vec2 v_localPosition;
 
     void main() {
         vec2 zeroToOne = a_position / u_resolution;
@@ -11,41 +13,62 @@ const RECTANGLE_VERTEX_SHADER_SOURCE = `
         vec2 clipSpace = zeroToTwo - 1.0;
 
         gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
+        v_localPosition = a_localPosition;
     }
 `;
 
 const RECTANGLE_FRAGMENT_SHADER_SOURCE = `
     precision mediump float;
-    uniform vec4 u_color;
+
+    uniform vec4 u_fillColor;
+    uniform vec4 u_borderColor;
+    uniform float u_borderSize;
+    uniform vec2 u_rectSize;
+    uniform int u_borderType; // 0 = none, 1 = solid, 2 = dashed, 3 = dotted
+
+    varying vec2 v_localPosition;
 
     void main() {
-        gl_FragColor = u_color;
-    }
-`;
+        float distanceToLeft = v_localPosition.x;
+        float distanceToRight = u_rectSize.x - v_localPosition.x;
+        float distanceToTop = v_localPosition.y;
+        float distanceToBottom = u_rectSize.y - v_localPosition.y;
 
-const IMAGE_VERTEX_SHADER_SOURCE = `
-    attribute vec2 a_position;
-    attribute vec2 a_texCoord;
-    uniform vec2 u_resolution;
-    varying vec2 v_texCoord;
+        float distanceToEdge = min(min(distanceToLeft, distanceToRight), min(distanceToTop, distanceToBottom));
 
-    void main() {
-        vec2 zeroToOne = a_position / u_resolution;
-        vec2 zeroToTwo = zeroToOne * 2.0;
-        vec2 clipSpace = zeroToTwo - 1.0;
+        bool insideBorderBand = u_borderSize > 0.0 && distanceToEdge < u_borderSize;
 
-        gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
-        v_texCoord = a_texCoord;
-    }
-`;
+        if (insideBorderBand && u_borderType == 1) {
+            // Solid: every pixel within the border band is border-colored.
+            gl_FragColor = u_borderColor;
+        } else if (insideBorderBand && (u_borderType == 2 || u_borderType == 3)) {
+            // Dashed/dotted: compute distance traveled along whichever edge is nearest,
+            // then use mod() to create repeating on/off segments.
+            float dashLength = u_borderType == 2 ? 12.0 : 4.0; // dash vs dot segment length, pixels
+            float gapLength = u_borderType == 2 ? 8.0 : 6.0;
+            float period = dashLength + gapLength;
 
-const IMAGE_FRAGMENT_SHADER_SOURCE = `
-    precision mediump float;
-    uniform sampler2D u_image;
-    varying vec2 v_texCoord;
+            float alongEdge;
+            if (distanceToTop <= distanceToBottom && distanceToTop <= distanceToLeft && distanceToTop <= distanceToRight) {
+                alongEdge = v_localPosition.x; // on top edge, travel along x
+            } else if (distanceToBottom <= distanceToLeft && distanceToBottom <= distanceToRight) {
+                alongEdge = v_localPosition.x; // bottom edge
+            } else if (distanceToLeft <= distanceToRight) {
+                alongEdge = v_localPosition.y; // left edge, travel along y
+            } else {
+                alongEdge = v_localPosition.y; // right edge
+            }
 
-    void main() {
-        gl_FragColor = texture2D(u_image, v_texCoord);
+            float positionInPeriod = mod(alongEdge, period);
+
+            if (positionInPeriod < dashLength) {
+                gl_FragColor = u_borderColor;
+            } else {
+                gl_FragColor = u_fillColor;
+            }
+        } else {
+            gl_FragColor = u_fillColor;
+        }
     }
 `;
 
@@ -109,8 +132,12 @@ export class WebglRenderer {
         // Rectangle Program
         this.rectangleProgram = createProgram(gl, RECTANGLE_VERTEX_SHADER_SOURCE, RECTANGLE_FRAGMENT_SHADER_SOURCE);
         this.rectanglePositionLocation = gl.getAttribLocation(this.rectangleProgram, "a_position");
+        this.rectangleLocalPositionLocation = gl.getAttribLocation(this.rectangleProgram, "a_localPosition");
         this.rectangleResolutionLocation = gl.getUniformLocation(this.rectangleProgram, "u_resolution");
-        this.rectangleColorLocation = gl.getUniformLocation(this.rectangleProgram, "u_color");
+        this.rectangleFillColorLocation = gl.getUniformLocation(this.rectangleProgram, "u_fillColor");
+        this.rectangleBorderColorLocation = gl.getUniformLocation(this.rectangleProgram, "u_borderColor");
+        this.rectangleBorderSizeLocation = gl.getUniformLocation(this.rectangleProgram, "u_borderSize");
+        this.rectangleRectSizeLocation = gl.getUniformLocation(this.rectangleProgram, "u_rectSize");
 
         // Image Program
         this.imageProgram = createProgram(gl, IMAGE_VERTEX_SHADER_SOURCE, IMAGE_FRAGMENT_SHADER_SOURCE);
@@ -120,6 +147,7 @@ export class WebglRenderer {
 
         // Shared Position Buffer
         this.positionBuffer = gl.createBuffer();
+        this.localPositionBuffer = gl.createBuffer();
         this.texCoordBuffer = gl.createBuffer();
 
         this.textureCache = new Map(); // Image source -> WebGL texture
@@ -187,8 +215,11 @@ export class WebglRenderer {
                 const height = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_HEIGHT];
 
                 const { r, g, b } = unpackColor(numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BACKGROUND_COLOR]);
+                const { r: borderR, g: borderG, b: borderB } = unpackColor(numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_COLOR]);
 
-                this.drawRectangle(x, y, width, height, r / 255, g / 255, b / 255, 1.0);
+                const borderSize = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_SIZE];
+
+                this.drawRectangle(x, y, width, height, r / 255, g / 255, b / 255, 1.0, borderR / 255, borderG / 255, borderB / 255, borderSize);
             }
             
             else if(type === PACKET_STRUCTURE.PACKET_IMAGE_TYPE) {
@@ -211,11 +242,15 @@ export class WebglRenderer {
         }
     }
 
-    drawRectangle(x, y, width, height, r, g, b, a) {
+    drawRectangle(x, y, width, height, r, g, b, a, borderR, borderG, borderB, borderSize) {
         const gl = this.gl;
 
         gl.useProgram(this.rectangleProgram);
         gl.uniform2f(this.rectangleResolutionLocation, this.canvas.width, this.canvas.height);
+        gl.uniform2f(this.rectangleRectSizeLocation, width, height);
+        gl.uniform4f(this.rectangleFillColorLocation, r, g, b, a);
+        gl.uniform4f(this.rectangleBorderColorLocation, borderR, borderG, borderB, 1.0);
+        gl.uniform1f(this.rectangleBorderSizeLocation, borderSize);
 
         const positions = new Float32Array([
             x, y,
@@ -226,13 +261,24 @@ export class WebglRenderer {
             x + width, y + height,
         ]);
 
+        const localPositions = new Float32Array([
+            0, 0,
+            width, 0,
+            0, height,
+            0, height,
+            width, 0,
+            width, height,
+        ]);
+
         gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, positions, gl.DYNAMIC_DRAW);
-
         gl.enableVertexAttribArray(this.rectanglePositionLocation);
         gl.vertexAttribPointer(this.rectanglePositionLocation, 2, gl.FLOAT, false, 0, 0);
 
-        gl.uniform4f(this.rectangleColorLocation, r, g, b, a);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.localPositionBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, localPositions, gl.DYNAMIC_DRAW);
+        gl.enableVertexAttribArray(this.rectangleLocalPositionLocation);
+        gl.vertexAttribPointer(this.rectangleLocalPositionLocation, 2, gl.FLOAT, false, 0, 0);
 
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
