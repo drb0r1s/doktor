@@ -146,13 +146,16 @@ export class WebglRenderer {
                 const width = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_WIDTH];
                 const height = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_HEIGHT];
 
-                const { r, g, b } = unpackColor(numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BACKGROUND_COLOR]);
-                const { r: borderR, g: borderG, b: borderB } = unpackColor(numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_COLOR]);
+                const backgroundColor = unpackColor(numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BACKGROUND_COLOR]);
+                const backgroundColorAlpha = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BACKGROUND_COLOR_ALPHA];
+
+                const borderColor = unpackColor(numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_COLOR]);
+                const borderColorAlpha = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_COLOR_ALPHA];
 
                 const borderSize = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_SIZE];
                 const borderType = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_TYPE];
 
-                this.drawRectangle(x, y, width, height, r / 255, g / 255, b / 255, 1.0, borderR / 255, borderG / 255, borderB / 255, borderSize, borderType);
+                this.drawRectangle(x, y, width, height, backgroundColor.r / 255, backgroundColor.g / 255, backgroundColor.b / 255, borderColorAlpha, borderColor.r / 255, borderColor.g / 255, borderColor.b / 255, borderColorAlpha, borderSize, borderType);
             }
             
             else if(type === PACKET_STRUCTURE.PACKET_IMAGE_TYPE) {
@@ -175,14 +178,14 @@ export class WebglRenderer {
         }
     }
 
-    drawRectangle(x, y, width, height, r, g, b, a, borderR, borderG, borderB, borderSize, borderType) {
+    drawRectangle(x, y, width, height, backgroundColorR, backgroundColorG, backgroundColorB, backgroundColorAlpha, borderColorR, borderColorG, borderColorB, borderColorAlpha, borderSize, borderType) {
         const gl = this.gl;
 
         gl.useProgram(this.rectangleProgram);
         gl.uniform2f(this.rectangleResolutionLocation, this.canvas.width, this.canvas.height);
         gl.uniform2f(this.rectangleRectSizeLocation, width, height);
-        gl.uniform4f(this.rectangleFillColorLocation, r, g, b, a);
-        gl.uniform4f(this.rectangleBorderColorLocation, borderR, borderG, borderB, 1.0);
+        gl.uniform4f(this.rectangleFillColorLocation, backgroundColorR, backgroundColorG, backgroundColorB, backgroundColorAlpha);
+        gl.uniform4f(this.rectangleBorderColorLocation, borderColorR, borderColorG, borderColorB, borderColorAlpha);
         gl.uniform1f(this.rectangleBorderSizeLocation, borderSize);
         gl.uniform1i(this.rectangleBorderTypeLocation, borderType);
 

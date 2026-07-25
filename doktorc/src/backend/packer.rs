@@ -44,7 +44,9 @@ impl Packer {
         row[packet_structure::PACKET_WIDTH] = rectangle.width;
         row[packet_structure::PACKET_HEIGHT] = rectangle.height;
         row[packet_structure::PACKET_BACKGROUND_COLOR] = Self::pack_color(rectangle.color);
+        row[packet_structure::PACKET_BACKGROUND_COLOR_ALPHA] = rectangle.color.a as f32;
         row[packet_structure::PACKET_BORDER_COLOR] = Self::pack_color(rectangle.border_color);
+        row[packet_structure::PACKET_BORDER_COLOR_ALPHA] = rectangle.border_color.a as f32;
         row[packet_structure::PACKET_BORDER_SIZE] = rectangle.border_size;
         row[packet_structure::PACKET_BORDER_TYPE] = rectangle.border_type as u32 as f32;
     }
@@ -59,6 +61,7 @@ impl Packer {
         row[packet_structure::PACKET_STRING_OFFSET] = offset as f32;
         row[packet_structure::PACKET_STRING_LENGTH] = length as f32;
         row[packet_structure::PACKET_CONTENT_COLOR] = Self::pack_color(text.color);
+        row[packet_structure::PACKET_CONTENT_COLOR_ALPHA] = text.color.a as f32;
         row[packet_structure::PACKET_CONTENT_SIZE] = text.font_size;
         row[packet_structure::PACKET_CONTENT_FONT] = text.font_family as u32 as f32;
     }
