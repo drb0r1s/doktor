@@ -1,19 +1,5 @@
-const PACKET_SIZE = 16;
-
-const PACKET_TYPE = 0;
-const PACKET_X = 1;
-const PACKET_Y = 2;
-const PACKET_WIDTH_OR_FONT_SIZE = 3;
-const PACKET_HEIGHT = 4;
-const PACKET_R = 5;
-const PACKET_G = 6;
-const PACKET_B = 7;
-const PACKET_STRING_OFFSET = 8;
-const PACKET_STRING_LENGTH = 9;
-
-const PACKET_RECTANGLE_TYPE = 0;
-const PACKET_TEXT_TYPE = 1;
-const PACKET_IMAGE_TYPE = 2;
+import { unpackColor } from "../functions/unpackColor.js";
+import { PACKET_STRUCTURE } from "../data/packetStructure.js";
 
 const RECTANGLE_VERTEX_SHADER_SOURCE = `
     attribute vec2 a_position;
@@ -145,11 +131,11 @@ export class WebglRenderer {
         const sources = new Set();
 
         for(let i = 0; i < drawStructuresCount; i++) {
-            const rowStart = i * PACKET_SIZE;
-            if(numericBuffer[rowStart + PACKET_TYPE] !== PACKET_IMAGE_TYPE) continue;
+            const rowStart = i * PACKET_STRUCTURE.PACKET_SIZE;
+            if(numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_TYPE] !== PACKET_STRUCTURE.PACKET_IMAGE_TYPE) continue;
 
-            const offset = numericBuffer[rowStart + PACKET_STRING_OFFSET];
-            const length = numericBuffer[rowStart + PACKET_STRING_LENGTH];
+            const offset = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_STRING_OFFSET];
+            const length = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_STRING_LENGTH];
 
             sources.add(decoder.decode(stringTable.subarray(offset, offset + length)));
         }
@@ -190,32 +176,30 @@ export class WebglRenderer {
         const decoder = new TextDecoder("utf-8");
 
         for(let i = 0; i < drawStructuresCount; i++) {
-            const rowStart = i * PACKET_SIZE;
-            const type = numericBuffer[rowStart + PACKET_TYPE];
+            const rowStart = i * PACKET_STRUCTURE.PACKET_SIZE;
+            const type = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_TYPE];
 
-            if(type === PACKET_RECTANGLE_TYPE) {
-                const x = numericBuffer[rowStart + PACKET_X];
-                const y = numericBuffer[rowStart + PACKET_Y];
+            if(type === PACKET_STRUCTURE.PACKET_RECTANGLE_TYPE) {
+                const x = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_X];
+                const y = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_Y];
 
-                const width = numericBuffer[rowStart + PACKET_WIDTH_OR_FONT_SIZE];
-                const height = numericBuffer[rowStart + PACKET_HEIGHT];
+                const width = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_WIDTH];
+                const height = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_HEIGHT];
 
-                const r = numericBuffer[rowStart + PACKET_R] / 255;
-                const g = numericBuffer[rowStart + PACKET_G] / 255;
-                const b = numericBuffer[rowStart + PACKET_B] / 255;
+                const { r, g, b } = unpackColor(numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BACKGROUND_COLOR]);
 
-                this.drawRectangle(x, y, width, height, r, g, b, 1.0);
+                this.drawRectangle(x, y, width, height, r / 255, g / 255, b / 255, 1.0);
             }
             
-            else if(type === PACKET_IMAGE_TYPE) {
-                const x = numericBuffer[rowStart + PACKET_X];
-                const y = numericBuffer[rowStart + PACKET_Y];
+            else if(type === PACKET_STRUCTURE.PACKET_IMAGE_TYPE) {
+                const x = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_X];
+                const y = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_Y];
 
-                const width = numericBuffer[rowStart + PACKET_WIDTH_OR_FONT_SIZE];
-                const height = numericBuffer[rowStart + PACKET_HEIGHT];
+                const width = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_WIDTH];
+                const height = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_HEIGHT];
 
-                const offset = numericBuffer[rowStart + PACKET_STRING_OFFSET];
-                const length = numericBuffer[rowStart + PACKET_STRING_LENGTH];
+                const offset = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_STRING_OFFSET];
+                const length = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_STRING_LENGTH];
 
                 const source = decoder.decode(stringTable.subarray(offset, offset + length));
 
@@ -228,6 +212,7 @@ export class WebglRenderer {
     }
 
     drawRectangle(x, y, width, height, r, g, b, a) {
+        console.log(x,y,width,height,r,g,b)
         const gl = this.gl;
 
         gl.useProgram(this.rectangleProgram);

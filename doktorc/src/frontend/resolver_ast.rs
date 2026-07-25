@@ -30,21 +30,21 @@ pub enum Alignment {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Font {
-    Arial,
-    Helvetica,
-    Verdana,
-    Tahoma,
-    TrebuchetMS,
-    SegoeUI,
-    Georgia,
-    TimesNewRoman,
-    Garamond,
-    Baskerville,
-    CourierNew,
-    Consolas,
-    SansSerif,
-    Serif,
-    Monospace,
+    Arial = 0,
+    Helvetica = 1,
+    Verdana = 2,
+    Tahoma = 3,
+    TrebuchetMS = 4,
+    SegoeUI = 5,
+    Georgia = 6,
+    TimesNewRoman = 7,
+    Garamond = 8,
+    Baskerville = 9,
+    CourierNew = 10,
+    Consolas = 11,
+    SansSerif = 12,
+    Serif = 13,
+    Monospace = 14,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -73,7 +73,7 @@ pub struct SystemStyles {
     pub position_y: Option<f32>,
     pub content_color: RGB,
     pub content_size: f32,
-    pub content_font: Font
+    pub content_font: Font,
     pub background_color: RGB,
 }
 

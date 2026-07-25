@@ -1,16 +1,5 @@
-const PACKET_SIZE = 16;
-
-const PACKET_TYPE = 0;
-const PACKET_X = 1;
-const PACKET_Y = 2;
-const PACKET_WIDTH_OR_FONT_SIZE = 3;
-const PACKET_R = 5;
-const PACKET_G = 6;
-const PACKET_B = 7;
-const PACKET_STRING_OFFSET = 8;
-const PACKET_STRING_LENGTH = 9;
-
-const PACKET_TEXT_TYPE = 1;
+import { unpackColor } from "../functions/unpackColor.js";
+import { PACKET_STRUCTURE } from "../data/packetStructure.js";
 
 export class TextRenderer {
     constructor(canvas) {
@@ -27,26 +16,25 @@ export class TextRenderer {
         const decoder = new TextDecoder("utf-8");
 
         for (let i = 0; i < drawStructuresCount; i++) {
-            const rowStart = i * PACKET_SIZE;
-            const type = numericBuffer[rowStart + PACKET_TYPE];
+            const rowStart = i * PACKET_STRUCTURE.PACKET_SIZE;
+            const type = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_TYPE];
 
-            if (type !== PACKET_TEXT_TYPE) continue;
+            if (type !== PACKET_STRUCTURE.PACKET_TEXT_TYPE) continue;
 
-            const x = numericBuffer[rowStart + PACKET_X];
-            const y = numericBuffer[rowStart + PACKET_Y];
+            const x = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_X];
+            const y = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_Y];
 
-            const fontSize = numericBuffer[rowStart + PACKET_WIDTH_OR_FONT_SIZE];
+            const offset = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_STRING_OFFSET];
+            const length = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_STRING_LENGTH];
 
-            const r = numericBuffer[rowStart + PACKET_R];
-            const g = numericBuffer[rowStart + PACKET_G];
-            const b = numericBuffer[rowStart + PACKET_B];
+            const { r, g, b } = unpackColor(numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_CONTENT_COLOR]);
 
-            const offset = numericBuffer[rowStart + PACKET_STRING_OFFSET];
-            const length = numericBuffer[rowStart + PACKET_STRING_LENGTH];
+            const contentSize = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_CONTENT_SIZE];
+            const contentFont = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_CONTENT_FONT];
 
             const content = decoder.decode(stringTable.subarray(offset, offset + length));
 
-            context.font = `${fontSize}px sans-serif`;
+            context.font = `${contentSize}px ${contentFont}`;
             context.fillStyle = `rgb(${r}, ${g}, ${b})`;
 
             context.fillText(content, x, y);
