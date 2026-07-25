@@ -32,7 +32,6 @@ export class TextRenderer {
 
             const contentSize = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_CONTENT_SIZE];
             const contentFont = getFont(numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_CONTENT_FONT]);
-            console.log(contentFont, numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_CONTENT_FONT])
 
             const content = decoder.decode(stringTable.subarray(offset, offset + length));
 
