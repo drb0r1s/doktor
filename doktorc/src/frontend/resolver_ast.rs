@@ -69,11 +69,12 @@ pub fn parse_font(value: &str) -> Option<Font> {
     FONT_NAMES.iter().find(|(name, _)| *name == value).map(|(_, font)| *font)
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum BorderType {
-    None,
-    Solid,
-    Dashed,
-    Dotted,
+    None = 0,
+    Solid = 1,
+    Dashed = 2,
+    Dotted = 3,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]

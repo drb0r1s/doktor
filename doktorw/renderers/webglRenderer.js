@@ -23,8 +23,8 @@ const RECTANGLE_FRAGMENT_SHADER_SOURCE = `
     uniform vec4 u_fillColor;
     uniform vec4 u_borderColor;
     uniform float u_borderSize;
+    uniform int u_borderType;
     uniform vec2 u_rectSize;
-    uniform int u_borderType; // 0 = none, 1 = solid, 2 = dashed, 3 = dotted
 
     varying vec2 v_localPosition;
 
@@ -38,35 +38,50 @@ const RECTANGLE_FRAGMENT_SHADER_SOURCE = `
 
         bool insideBorderBand = u_borderSize > 0.0 && distanceToEdge < u_borderSize;
 
-        if (insideBorderBand && u_borderType == 1) {
-            // Solid: every pixel within the border band is border-colored.
+        if(insideBorderBand && u_borderType == 1) {
             gl_FragColor = u_borderColor;
-        } else if (insideBorderBand && (u_borderType == 2 || u_borderType == 3)) {
-            // Dashed/dotted: compute distance traveled along whichever edge is nearest,
-            // then use mod() to create repeating on/off segments.
-            float dashLength = u_borderType == 2 ? 12.0 : 4.0; // dash vs dot segment length, pixels
+        }
+        
+        else if(insideBorderBand && (u_borderType == 2 || u_borderType == 3)) {
+            float dashLength = u_borderType == 2 ? 12.0 : 4.0;
             float gapLength = u_borderType == 2 ? 8.0 : 6.0;
+
             float period = dashLength + gapLength;
 
             float alongEdge;
-            if (distanceToTop <= distanceToBottom && distanceToTop <= distanceToLeft && distanceToTop <= distanceToRight) {
-                alongEdge = v_localPosition.x; // on top edge, travel along x
-            } else if (distanceToBottom <= distanceToLeft && distanceToBottom <= distanceToRight) {
-                alongEdge = v_localPosition.x; // bottom edge
-            } else if (distanceToLeft <= distanceToRight) {
-                alongEdge = v_localPosition.y; // left edge, travel along y
-            } else {
-                alongEdge = v_localPosition.y; // right edge
+            
+            // Top edge
+            if(distanceToTop <= distanceToBottom && distanceToTop <= distanceToLeft && distanceToTop <= distanceToRight) {
+                alongEdge = v_localPosition.x;
+            }
+            
+            // Bottom edge
+            else if(distanceToBottom <= distanceToLeft && distanceToBottom <= distanceToRight) {
+                alongEdge = v_localPosition.x;
+            }
+            
+            // Left edge
+            else if(distanceToLeft <= distanceToRight) {
+                alongEdge = v_localPosition.y;
+            }
+            
+            // Right edge
+            else {
+                alongEdge = v_localPosition.y;
             }
 
             float positionInPeriod = mod(alongEdge, period);
 
-            if (positionInPeriod < dashLength) {
+            if(positionInPeriod < dashLength) {
                 gl_FragColor = u_borderColor;
-            } else {
+            }
+                
+            else {
                 gl_FragColor = u_fillColor;
             }
-        } else {
+        }
+            
+        else {
             gl_FragColor = u_fillColor;
         }
     }
@@ -163,6 +178,7 @@ export class WebglRenderer {
         this.rectangleFillColorLocation = gl.getUniformLocation(this.rectangleProgram, "u_fillColor");
         this.rectangleBorderColorLocation = gl.getUniformLocation(this.rectangleProgram, "u_borderColor");
         this.rectangleBorderSizeLocation = gl.getUniformLocation(this.rectangleProgram, "u_borderSize");
+        this.rectangleBorderTypeLocation = gl.getUniformLocation(this.rectangleProgram, "u_borderType");
         this.rectangleRectSizeLocation = gl.getUniformLocation(this.rectangleProgram, "u_rectSize");
 
         // Image Program
@@ -244,8 +260,9 @@ export class WebglRenderer {
                 const { r: borderR, g: borderG, b: borderB } = unpackColor(numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_COLOR]);
 
                 const borderSize = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_SIZE];
+                const borderType = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_TYPE];
 
-                this.drawRectangle(x, y, width, height, r / 255, g / 255, b / 255, 1.0, borderR / 255, borderG / 255, borderB / 255, borderSize);
+                this.drawRectangle(x, y, width, height, r / 255, g / 255, b / 255, 1.0, borderR / 255, borderG / 255, borderB / 255, borderSize, borderType);
             }
             
             else if(type === PACKET_STRUCTURE.PACKET_IMAGE_TYPE) {
@@ -268,7 +285,7 @@ export class WebglRenderer {
         }
     }
 
-    drawRectangle(x, y, width, height, r, g, b, a, borderR, borderG, borderB, borderSize) {
+    drawRectangle(x, y, width, height, r, g, b, a, borderR, borderG, borderB, borderSize, borderType) {
         const gl = this.gl;
 
         gl.useProgram(this.rectangleProgram);
@@ -277,6 +294,7 @@ export class WebglRenderer {
         gl.uniform4f(this.rectangleFillColorLocation, r, g, b, a);
         gl.uniform4f(this.rectangleBorderColorLocation, borderR, borderG, borderB, 1.0);
         gl.uniform1f(this.rectangleBorderSizeLocation, borderSize);
+        gl.uniform1i(this.rectangleBorderTypeLocation, borderType);
 
         const positions = new Float32Array([
             x, y,

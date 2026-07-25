@@ -64,6 +64,9 @@ impl Painter {
                     width: block.size.width,
                     height: block.size.height,
                     color,
+                    border_color: block.system_styles.border_color,
+                    border_size: block.system_styles.border_size,
+                    border_type: block.system_styles.border_type,
                 }))
             },
         }

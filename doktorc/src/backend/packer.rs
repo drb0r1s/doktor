@@ -44,6 +44,9 @@ impl Packer {
         row[packet_structure::PACKET_WIDTH] = rectangle.width;
         row[packet_structure::PACKET_HEIGHT] = rectangle.height;
         row[packet_structure::PACKET_BACKGROUND_COLOR] = Self::pack_color(rectangle.color);
+        row[packet_structure::PACKET_BORDER_COLOR] = Self::pack_color(rectangle.border_color);
+        row[packet_structure::PACKET_BORDER_SIZE] = rectangle.border_size;
+        row[packet_structure::PACKET_BORDER_TYPE] = rectangle.border_type as u32 as f32;
     }
 
     fn pack_text(text: &Text, row: &mut [f32], string_table: &mut Vec<u8>) {
