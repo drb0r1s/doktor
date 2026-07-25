@@ -1,5 +1,5 @@
 import init, { compile } from "../doktorr/pkg/doktorr.js";
-import { WebglRenderer } from "./renderers/webglRenderer.js";
+import { WebglRenderer } from "./renderers/webgl/webglRenderer.js";
 import { TextRenderer } from "./renderers/textRenderer.js";
 
 async function run() {
