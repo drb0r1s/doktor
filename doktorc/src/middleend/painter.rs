@@ -51,6 +51,7 @@ impl Painter {
                     location: block.location,
                     content,
                     font_size: block.system_styles.content_size,
+                    font_family: block.system_styles.content_font,
                     color: block.system_styles.content_color,
                 }))
             },

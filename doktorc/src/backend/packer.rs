@@ -57,6 +57,7 @@ impl Packer {
         row[packet_structure::PACKET_STRING_LENGTH] = length as f32;
         row[packet_structure::PACKET_CONTENT_COLOR] = Self::pack_color(text.color);
         row[packet_structure::PACKET_CONTENT_SIZE] = text.font_size;
+        row[packet_structure::PACKET_CONTENT_FONT] = text.font_family as u32 as f32;
     }
 
     fn pack_image(image: &Image, row: &mut [f32], string_table: &mut Vec<u8>) {

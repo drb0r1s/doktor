@@ -1,4 +1,4 @@
-use crate::frontend::resolver_ast::RGB;
+use crate::frontend::resolver_ast::{RGB, Font};
 
 use crate::middleend::shaper_ast::Location;
 
@@ -15,6 +15,7 @@ pub struct Text {
     pub location: Location,
     pub content: String,
     pub font_size: f32,
+    pub font_family: Font,
     pub color: RGB,
 }
 

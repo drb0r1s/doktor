@@ -47,6 +47,28 @@ pub enum Font {
     Monospace = 14,
 }
 
+const FONT_NAMES: &[(&str, Font)] = &[
+    ("arial", Font::Arial),
+    ("helvetica", Font::Helvetica),
+    ("verdana", Font::Verdana),
+    ("tahoma", Font::Tahoma),
+    ("trebuchet_ms", Font::TrebuchetMS),
+    ("segoe_ui", Font::SegoeUI),
+    ("georgia", Font::Georgia),
+    ("times_new_roman", Font::TimesNewRoman),
+    ("garamond", Font::Garamond),
+    ("baskerville", Font::Baskerville),
+    ("courier_new", Font::CourierNew),
+    ("consolas", Font::Consolas),
+    ("sans_serif", Font::SansSerif),
+    ("serif", Font::Serif),
+    ("monospace", Font::Monospace),
+];
+
+pub fn parse_font(value: &str) -> Option<Font> {
+    FONT_NAMES.iter().find(|(name, _)| *name == value).map(|(_, font)| *font)
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SystemAttributes {
     // Image

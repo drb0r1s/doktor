@@ -1,7 +1,7 @@
 use std::fmt;
 
 use crate::frontend::parser_ast::{Attribute, Style, ParserBlockNode, ParserDoktorNode};
-use crate::frontend::resolver_ast::{RGB, Layout, Direction, Alignment, SystemAttributes, SystemStyles, ResolverBlockNode, ResolverDoktorNode};
+use crate::frontend::resolver_ast::{RGB, Layout, Direction, Alignment, parse_font, SystemAttributes, SystemStyles, ResolverBlockNode, ResolverDoktorNode};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct SemanticWarning {
@@ -260,6 +260,15 @@ impl Resolver {
                     match style.value.parse::<f32>() {
                         Ok(value) => system_styles.content_size = value,
                         Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
+                "content_font" => {
+                    match parse_font(&style.value) {
+                        Some(font) => system_styles.content_font = font,
+                        None => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
                     }
 
                     true

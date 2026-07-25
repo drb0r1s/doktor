@@ -212,7 +212,6 @@ export class WebglRenderer {
     }
 
     drawRectangle(x, y, width, height, r, g, b, a) {
-        console.log(x,y,width,height,r,g,b)
         const gl = this.gl;
 
         gl.useProgram(this.rectangleProgram);
