@@ -34,6 +34,11 @@ pub struct Image {
     pub width: f32,
     pub height: f32,
     pub source: String,
+    pub background_color: RGB,
+    pub border_color: RGB,
+    pub border_size: f32,
+    pub border_type: BorderType,
+    pub opacity: f32,
 }
 
 #[derive(Debug, Clone, PartialEq)]

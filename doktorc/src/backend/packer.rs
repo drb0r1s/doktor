@@ -81,8 +81,15 @@ impl Packer {
         row[packet_structure::PACKET_Y] = image.location.y;
         row[packet_structure::PACKET_WIDTH] = image.width;
         row[packet_structure::PACKET_HEIGHT] = image.height;
+        row[packet_structure::PACKET_BACKGROUND_COLOR] = Self::pack_color(image.background_color);
+        row[packet_structure::PACKET_BACKGROUND_COLOR_ALPHA] = image.background_color.a as f32;
         row[packet_structure::PACKET_STRING_OFFSET] = offset as f32;
         row[packet_structure::PACKET_STRING_LENGTH] = length as f32;
+        row[packet_structure::PACKET_BORDER_COLOR] = Self::pack_color(image.border_color);
+        row[packet_structure::PACKET_BORDER_COLOR_ALPHA] = image.border_color.a as f32;
+        row[packet_structure::PACKET_BORDER_SIZE] = image.border_size;
+        row[packet_structure::PACKET_BORDER_TYPE] = image.border_type as u32 as f32;
+        row[packet_structure::PACKET_OPACITY] = image.opacity;
     }
 
     fn pack_color(color: RGB) -> f32 {
