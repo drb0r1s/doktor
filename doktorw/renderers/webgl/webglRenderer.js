@@ -155,7 +155,7 @@ export class WebglRenderer {
                 const borderSize = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_SIZE];
                 const borderType = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_TYPE];
 
-                this.drawRectangle(x, y, width, height, backgroundColor.r / 255, backgroundColor.g / 255, backgroundColor.b / 255, borderColorAlpha, borderColor.r / 255, borderColor.g / 255, borderColor.b / 255, borderColorAlpha, borderSize, borderType);
+                this.drawRectangle(x, y, width, height, backgroundColor.r / 255, backgroundColor.g / 255, backgroundColor.b / 255, backgroundColorAlpha / 255, borderColor.r / 255, borderColor.g / 255, borderColor.b / 255, borderColorAlpha / 255, borderSize, borderType);
             }
             
             else if(type === PACKET_STRUCTURE.PACKET_IMAGE_TYPE) {
