@@ -7,7 +7,7 @@ pub struct Rectangle {
     pub location: Location,
     pub width: f32,
     pub height: f32,
-    pub color: RGB,
+    pub background_color: RGB,
     pub border_color: RGB,
     pub border_size: f32,
     pub border_type: BorderType,
@@ -18,9 +18,10 @@ pub struct Rectangle {
 pub struct Text {
     pub location: Location,
     pub content: String,
-    pub font_size: f32,
-    pub font_family: Font,
-    pub color: RGB,
+    pub background_color: RGB,
+    pub content_color: RGB,
+    pub content_size: f32,
+    pub content_font: Font,
 }
 
 #[derive(Debug, Clone, PartialEq)]

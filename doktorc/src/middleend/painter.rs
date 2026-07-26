@@ -50,9 +50,10 @@ impl Painter {
                 Some(DrawStructure::Text(Text {
                     location: block.location,
                     content,
-                    font_size: block.system_styles.content_size,
-                    font_family: block.system_styles.content_font,
-                    color: block.system_styles.content_color,
+                    background_color: block.system_styles.background_color,
+                    content_color: block.system_styles.content_color,
+                    content_size: block.system_styles.content_size,
+                    content_font: block.system_styles.content_font,
                 }))
             },
 
@@ -61,7 +62,7 @@ impl Painter {
                     location: block.location,
                     width: block.size.width,
                     height: block.size.height,
-                    color: block.system_styles.background_color,
+                    background_color: block.system_styles.background_color,
                     border_color: block.system_styles.border_color,
                     border_size: block.system_styles.border_size,
                     border_type: block.system_styles.border_type,
