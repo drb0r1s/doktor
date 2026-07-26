@@ -108,7 +108,8 @@ pub struct SystemStyles {
     pub background_color: RGB,
     pub border_color: RGB,
     pub border_size: f32,
-    pub border_type: BorderType
+    pub border_type: BorderType,
+    pub opacity: f32,
 }
 
 impl SystemStyles {
@@ -131,6 +132,7 @@ impl SystemStyles {
             border_color: default_values::DEFAULT_BORDER_COLOR,
             border_size: default_values::DEFAULT_BORDER_SIZE,
             border_type: default_values::DEFAULT_BORDER_TYPE,
+            opacity: default_values::DEFAULT_OPACITY,
         }
     }
 

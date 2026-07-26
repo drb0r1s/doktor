@@ -19,3 +19,5 @@ pub const DEFAULT_BACKGROUND_COLOR: RGB = RGB { r: 0, g: 0, b: 0, a: 255 };
 pub const DEFAULT_BORDER_COLOR: RGB = RGB { r: 0, g: 0, b: 0, a: 255 };
 pub const DEFAULT_BORDER_SIZE: f32 = 0.0;
 pub const DEFAULT_BORDER_TYPE: BorderType = BorderType::None;
+
+pub const DEFAULT_OPACITY: f32 = 1.0;

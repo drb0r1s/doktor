@@ -1,4 +1,4 @@
-pub const PACKET_SIZE: usize = 17;
+pub const PACKET_SIZE: usize = 18;
 
 pub const PACKET_TYPE: usize = 0;
 
@@ -23,6 +23,8 @@ pub const PACKET_BORDER_COLOR: usize = 13;
 pub const PACKET_BORDER_COLOR_ALPHA: usize = 14;
 pub const PACKET_BORDER_SIZE: usize = 15;
 pub const PACKET_BORDER_TYPE: usize = 16;
+
+pub const PACKET_OPACITY: usize = 17;
 
 pub const PACKET_RECTANGLE_TYPE: f32 = 0.0;
 pub const PACKET_TEXT_TYPE: f32 = 1.0;

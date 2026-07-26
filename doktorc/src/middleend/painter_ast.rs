@@ -11,6 +11,7 @@ pub struct Rectangle {
     pub border_color: RGB,
     pub border_size: f32,
     pub border_type: BorderType,
+    pub opacity: f32,
 }
 
 #[derive(Debug, Clone, PartialEq)]

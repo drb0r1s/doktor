@@ -70,12 +70,14 @@ export class WebglRenderer {
         this.rectangleBorderSizeLocation = gl.getUniformLocation(this.rectangleProgram, "u_borderSize");
         this.rectangleBorderTypeLocation = gl.getUniformLocation(this.rectangleProgram, "u_borderType");
         this.rectangleRectSizeLocation = gl.getUniformLocation(this.rectangleProgram, "u_rectSize");
+        this.rectangleOpacityLocation = gl.getUniformLocation(this.rectangleProgram, "u_opacity");
 
         // Image Program
         this.imageProgram = createProgram(gl, IMAGE_VERTEX_SHADER_SOURCE, IMAGE_FRAGMENT_SHADER_SOURCE);
         this.imagePositionLocation = gl.getAttribLocation(this.imageProgram, "a_position");
         this.imageTexCoordLocation = gl.getAttribLocation(this.imageProgram, "a_texCoord");
         this.imageResolutionLocation = gl.getUniformLocation(this.imageProgram, "u_resolution");
+        this.imageOpacityLocation = gl.getUniformLocation(this.imageProgram, "u_opacity");
 
         // Shared Position Buffer
         this.positionBuffer = gl.createBuffer();
@@ -155,7 +157,9 @@ export class WebglRenderer {
                 const borderSize = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_SIZE];
                 const borderType = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_TYPE];
 
-                this.drawRectangle(x, y, width, height, backgroundColor.r / 255, backgroundColor.g / 255, backgroundColor.b / 255, backgroundColorAlpha / 255, borderColor.r / 255, borderColor.g / 255, borderColor.b / 255, borderColorAlpha / 255, borderSize, borderType);
+                const opacity = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_OPACITY];
+
+                this.drawRectangle(x, y, width, height, backgroundColor.r / 255, backgroundColor.g / 255, backgroundColor.b / 255, backgroundColorAlpha / 255, borderColor.r / 255, borderColor.g / 255, borderColor.b / 255, borderColorAlpha / 255, borderSize, borderType, opacity);
             }
             
             else if(type === PACKET_STRUCTURE.PACKET_IMAGE_TYPE) {
@@ -178,7 +182,7 @@ export class WebglRenderer {
         }
     }
 
-    drawRectangle(x, y, width, height, backgroundColorR, backgroundColorG, backgroundColorB, backgroundColorAlpha, borderColorR, borderColorG, borderColorB, borderColorAlpha, borderSize, borderType) {
+    drawRectangle(x, y, width, height, backgroundColorR, backgroundColorG, backgroundColorB, backgroundColorAlpha, borderColorR, borderColorG, borderColorB, borderColorAlpha, borderSize, borderType, opacity) {
         const gl = this.gl;
 
         gl.useProgram(this.rectangleProgram);
@@ -188,6 +192,7 @@ export class WebglRenderer {
         gl.uniform4f(this.rectangleBorderColorLocation, borderColorR, borderColorG, borderColorB, borderColorAlpha);
         gl.uniform1f(this.rectangleBorderSizeLocation, borderSize);
         gl.uniform1i(this.rectangleBorderTypeLocation, borderType);
+        gl.uniform1f(this.rectangleOpacityLocation, opacity);
 
         const positions = new Float32Array([
             x, y,

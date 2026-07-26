@@ -313,6 +313,15 @@ impl Resolver {
                     true
                 }
 
+                "opacity" => {
+                    match style.value.parse::<f32>() {
+                        Ok(value) => system_styles.opacity = value,
+                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
                 _ => false
             };
 

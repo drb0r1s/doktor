@@ -22,6 +22,7 @@ export const RECTANGLE_FRAGMENT_SHADER_SOURCE = `
     uniform float u_borderSize;
     uniform int u_borderType;
     uniform vec2 u_rectSize;
+    uniform float u_opacity;
 
     varying vec2 v_localPosition;
 
@@ -35,8 +36,10 @@ export const RECTANGLE_FRAGMENT_SHADER_SOURCE = `
 
         bool insideBorderBand = u_borderSize > 0.0 && distanceToEdge < u_borderSize;
 
+        vec4 resultColor;
+
         if(insideBorderBand && u_borderType == 1) {
-            gl_FragColor = u_borderColor;
+            resultColor = u_borderColor;
         }
         
         else if(insideBorderBand && (u_borderType == 2 || u_borderType == 3)) {
@@ -70,16 +73,19 @@ export const RECTANGLE_FRAGMENT_SHADER_SOURCE = `
             float positionInPeriod = mod(alongEdge, period);
 
             if(positionInPeriod < dashLength) {
-                gl_FragColor = u_borderColor;
+                resultColor = u_borderColor;
             }
                 
             else {
-                gl_FragColor = u_fillColor;
+                resultColor = u_fillColor;
             }
         }
             
         else {
-            gl_FragColor = u_fillColor;
+            resultColor = u_fillColor;
         }
+
+        resultColor.a *= u_opacity;
+        gl_FragColor = resultColor;
     }
 `;
