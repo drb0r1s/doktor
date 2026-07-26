@@ -1,6 +1,7 @@
 import { unpackColor } from "../functions/unpackColor.js";
 import { getFont } from "../functions/getFont.js";
 import { PACKET_STRUCTURE } from "../data/packetStructure.js";
+import { BORDER_TYPES } from "../data/borderTypes.js";
 
 export class TextRenderer {
     constructor(canvas) {
@@ -39,18 +40,41 @@ export class TextRenderer {
 
             context.font = `${contentSize}px ${contentFont}`;
 
+            const borderColor = unpackColor(numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_COLOR]);
+            const borderColorAlpha = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_COLOR_ALPHA];
+
+            const borderSize = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_SIZE];
+            const borderType = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_TYPE];
+
+            const opacity = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_OPACITY];
+
             const content = decoder.decode(stringTable.subarray(offset, offset + length));
 
             const metrics = context.measureText(content);
 
             const textWidth = metrics.width;
             const textHeight = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
-            
+
+            context.globalAlpha = opacity;
+
             context.fillStyle = `rgba(${backgroundColor.r}, ${backgroundColor.g}, ${backgroundColor.b}, ${backgroundColorAlpha / 255})`;
             context.fillRect(x, y, textWidth, textHeight);
 
+            if(borderSize > 0) {
+                context.strokeStyle = `rgba(${borderColor.r}, ${borderColor.g}, ${borderColor.b}, ${borderColorAlpha / 255})`;
+                context.lineWidth = borderSize;
+
+                if(borderType === BORDER_TYPES.DASHED) context.setLineDash([12, 8]);
+                else if (borderType === BORDER_TYPES.DOTTED) context.setLineDash([2, 4]);
+                else context.setLineDash([]);
+
+                context.strokeRect(x + borderSize / 2, y + borderSize / 2, textWidth - borderSize, textHeight - borderSize);
+            }
+
             context.fillStyle = `rgba(${contentColor.r}, ${contentColor.g}, ${contentColor.b}, ${contentColorAlpha / 255})`;
             context.fillText(content, x, y);
+
+            context.globalAlpha = 1.0;
         }
     }
 }

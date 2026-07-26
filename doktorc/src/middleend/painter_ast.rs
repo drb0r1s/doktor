@@ -18,10 +18,14 @@ pub struct Rectangle {
 pub struct Text {
     pub location: Location,
     pub content: String,
-    pub background_color: RGB,
     pub content_color: RGB,
     pub content_size: f32,
     pub content_font: Font,
+    pub background_color: RGB,
+    pub border_color: RGB,
+    pub border_size: f32,
+    pub border_type: BorderType,
+    pub opacity: f32,
 }
 
 #[derive(Debug, Clone, PartialEq)]
