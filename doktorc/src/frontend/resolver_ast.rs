@@ -113,7 +113,7 @@ pub struct SystemStyles {
 }
 
 impl SystemStyles {
-    pub fn default() -> Self {
+    pub fn default(is_text: bool) -> Self {
         SystemStyles {
             layout: default_values::DEFAULT_LAYOUT,
             direction: default_values::DEFAULT_DIRECTION,
@@ -128,7 +128,7 @@ impl SystemStyles {
             content_color: default_values::DEFAULT_CONTENT_COLOR,
             content_size: default_values::DEFAULT_CONTENT_SIZE,
             content_font: default_values::DEFAULT_CONTENT_FONT,
-            background_color: default_values::DEFAULT_BACKGROUND_COLOR,
+            background_color: if is_text { default_values::DEFAULT_TEXT_BACKGROUND_COLOR } else { default_values::DEFAULT_BACKGROUND_COLOR },
             border_color: default_values::DEFAULT_BORDER_COLOR,
             border_size: default_values::DEFAULT_BORDER_SIZE,
             border_type: default_values::DEFAULT_BORDER_TYPE,

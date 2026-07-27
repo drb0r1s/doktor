@@ -77,7 +77,7 @@ impl Resolver {
         };
 
         let (system_attributes, arbitrary_attributes) = self.resolve_attributes(resolved_block_type, parser_block_node.attributes);
-        let (system_styles, arbitrary_styles) = self.resolve_styles(parser_block_node.styles);
+        let (system_styles, arbitrary_styles) = self.resolve_styles(parser_block_node.styles, &parser_block_node.block_type);
 
         let children = parser_block_node.children.into_iter().map(|child_node| self.resolve_block(child_node)).collect();
 
@@ -143,8 +143,10 @@ impl Resolver {
         (system_attributes, arbitrary_attributes)
     }
 
-    fn resolve_styles(&mut self, styles: Vec<Style>) -> (SystemStyles, Vec<(String, String)>) {
-        let mut system_styles = SystemStyles::default();
+    fn resolve_styles(&mut self, styles: Vec<Style>, block_type: &String) -> (SystemStyles, Vec<(String, String)>) {
+        let is_text = block_type == "Text";
+        
+        let mut system_styles = SystemStyles::default(is_text);
         let mut arbitrary_styles = Vec::new();
 
         for style in styles {

@@ -28,7 +28,7 @@ impl Shaper {
         // Pass 2: top-down location defining.
         // Setting default layout properties for the doktor node (root).
 
-        let resolver_doktor_node_system_styles: SystemStyles = SystemStyles::default();
+        let resolver_doktor_node_system_styles: SystemStyles = SystemStyles::default(false);
 
         let children: Vec<ShaperBlockNode> = self.locate_children(
             &sized_children,
