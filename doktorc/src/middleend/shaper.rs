@@ -119,9 +119,11 @@ impl Shaper {
     // Pass 2: top-down location defining.
 
     fn locate_children(&self, children: &Vec<SizedResolverBlockNode>, parent_styles: &SystemStyles, parent_location: Location, parent_size: Size) -> Vec<ShaperBlockNode> {
+        let (inset_location, inset_size): (Location, Size) = Self::apply_border_inset(parent_styles, parent_location, parent_size);
+        
         match parent_styles.layout {
             Layout::Simple => {
-                self.organize_location(children, parent_styles, parent_location, parent_size)
+                self.organize_location(children, parent_styles, inset_location, inset_size)
             },
 
             Layout::Free => children.iter().map(|child| {
@@ -129,11 +131,11 @@ impl Shaper {
                 let position_y: f32 = child.resolver_block_node.system_styles.position_y.or(Some(child.resolver_block_node.system_styles.position)).unwrap_or(0.0);
 
                 let location: Location = Location {
-                    x: parent_location.x + position_x,
-                    y: parent_location.y + position_y,
+                    x: inset_location.x + position_x,
+                    y: inset_location.y + position_y,
                 };
 
-                self.get_shaper_block_node(child, location)
+                self.get_shaper_block_node(child, location, parent_styles.opacity)
             }).collect()
         }
     }
@@ -237,7 +239,7 @@ impl Shaper {
                     },
                 };
 
-                result.push(self.get_shaper_block_node(child, location));
+                result.push(self.get_shaper_block_node(child, location, parent_styles.opacity));
                 breakable_cursor += breakable_size;
             }
 
@@ -247,15 +249,38 @@ impl Shaper {
         result
     }
 
-    fn get_shaper_block_node(&self, sized_resolver_block_node: &SizedResolverBlockNode, location: Location) -> ShaperBlockNode {
-        let children: Vec<ShaperBlockNode> = self.locate_children(&sized_resolver_block_node.children, &sized_resolver_block_node.resolver_block_node.system_styles, location, sized_resolver_block_node.size);
+    fn apply_border_inset(parent_styles: &SystemStyles, parent_location: Location, parent_size: Size) -> (Location, Size) {
+        let border_size: f32 = parent_styles.border_size;
+
+        if border_size <= 0.0 {
+            return (parent_location, parent_size);
+        }
+
+        let inset_location = Location {
+            x: parent_location.x + border_size,
+            y: parent_location.y + border_size,
+        };
+
+        let inset_size = Size {
+            width: (parent_size.width - border_size * 2.0).max(0.0),
+            height: (parent_size.height - border_size * 2.0).max(0.0),
+        };
+
+        (inset_location, inset_size)
+    }
+
+    fn get_shaper_block_node(&self, sized_resolver_block_node: &SizedResolverBlockNode, location: Location, inherited_opacity: f32) -> ShaperBlockNode {
+        let mut system_styles = sized_resolver_block_node.resolver_block_node.system_styles.clone();
+        system_styles.opacity *= inherited_opacity;
+
+        let children: Vec<ShaperBlockNode> = self.locate_children(&sized_resolver_block_node.children, &system_styles, location, sized_resolver_block_node.size);
 
         ShaperBlockNode {
             block_type: sized_resolver_block_node.resolver_block_node.block_type.clone(),
             tag: sized_resolver_block_node.resolver_block_node.tag.clone(),
             system_attributes: sized_resolver_block_node.resolver_block_node.system_attributes.clone(),
             arbitrary_attributes: sized_resolver_block_node.resolver_block_node.arbitrary_attributes.clone(),
-            system_styles: sized_resolver_block_node.resolver_block_node.system_styles.clone(),
+            system_styles,
             arbitrary_styles: sized_resolver_block_node.resolver_block_node.arbitrary_styles.clone(),
             size: sized_resolver_block_node.size,
             location,
