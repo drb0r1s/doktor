@@ -1,6 +1,6 @@
 use crate::frontend::resolver_ast::{SystemStyles, Alignment, Direction, Layout, ResolverBlockNode, ResolverDoktorNode};
 
-use crate::middleend::shaper_ast::{Size, Location, ShaperBlockNode, ShaperDoktorNode};
+use crate::middleend::shaper_ast::{Size, Location, TextMeasurement, ShaperBlockNode, ShaperDoktorNode};
 
 struct SizedResolverBlockNode {
     resolver_block_node: ResolverBlockNode,
@@ -21,9 +21,17 @@ impl Shaper {
         }
     }
 
-    pub fn shape(&self, resolver_doktor_node: ResolverDoktorNode) -> ShaperDoktorNode {
+    pub fn shape(&self, resolver_doktor_node: ResolverDoktorNode, text_measurements: &[TextMeasurement]) -> ShaperDoktorNode {
         // Pass 1: bottom-up sizing.
-        let sized_children: Vec<SizedResolverBlockNode> = resolver_doktor_node.children.into_iter().map(|resolver_block_node| self.size_block(resolver_block_node)).collect();
+        let mut path: Vec<usize> = Vec::new();
+
+        let sized_children: Vec<SizedResolverBlockNode> = resolver_doktor_node.children.into_iter().enumerate().map(|(index, resolver_block_node)| {
+            path.push(index);
+            let sized = self.size_block(resolver_block_node, text_measurements, &mut path);
+            path.pop();
+
+            sized
+        }).collect();
 
         // Pass 2: top-down location defining.
         // Setting default layout properties for the doktor node (root).
@@ -45,15 +53,39 @@ impl Shaper {
 
     // Pass 1: bottom-up sizing.
 
-    fn size_block(&self, mut block: ResolverBlockNode) -> SizedResolverBlockNode {
+    fn size_block(&self, mut block: ResolverBlockNode, text_measurements: &[TextMeasurement], path: &mut Vec<usize>) -> SizedResolverBlockNode {
         let children: Vec<ResolverBlockNode> = std::mem::take(&mut block.children);
-        let sized_children: Vec<SizedResolverBlockNode> = children.into_iter().map(|child| self.size_block(child)).collect();
+
+        let sized_children: Vec<SizedResolverBlockNode> = children.into_iter().enumerate().map(|(index, child)| {
+            path.push(index);
+            let sized = self.size_block(child, text_measurements, path);
+            path.pop();
+
+            sized
+        }).collect();
 
         let size: Size = if sized_children.is_empty() {
             // Leaf: fixed size from its own width and height, or default.
-            Size {
-                width: block.system_styles.width,
-                height: block.system_styles.height,
+            // If a block is of type Text, then JS measured width and height are used.
+            if block.block_type == "Text" {
+                match text_measurements.iter().find(|text_measurement| &text_measurement.path == path) {
+                    Some(measurement) => Size {
+                        width: measurement.width,
+                        height: measurement.height,
+                    },
+
+                    None => Size {
+                        width: block.system_styles.width,
+                        height: block.system_styles.height,
+                    },
+                }
+            }
+            
+            else {
+                Size {
+                    width: block.system_styles.width,
+                    height: block.system_styles.height,
+                }
             }
         } else {
             // Not a leaf: width and height of the block are ignored (unless it is bigger than the minimal value), instead the size is determined based on the block's children.

@@ -12,6 +12,13 @@ pub struct Location {
     pub y: f32,
 }
 
+#[derive(serde::Deserialize)]
+pub struct TextMeasurement {
+    pub path: Vec<usize>,
+    pub width: f32,
+    pub height: f32,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct ShaperBlockNode {
     pub block_type: String,
