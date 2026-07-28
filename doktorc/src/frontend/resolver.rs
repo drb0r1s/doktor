@@ -222,6 +222,36 @@ impl Resolver {
                     true
                 }
 
+                "lock_dimensions" => {
+                    match style.value.as_str() {
+                        "true" | "1" => system_styles.lock_dimensions = true,
+                        "false" | "0" => system_styles.lock_dimensions = false,
+                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
+                "lock_width" => {
+                    match style.value.as_str() {
+                        "true" | "1" => system_styles.lock_width = Some(true),
+                        "false" | "0" => system_styles.lock_width = Some(false),
+                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
+                "lock_height" => {
+                    match style.value.as_str() {
+                        "true" | "1" => system_styles.lock_height = Some(true),
+                        "false" | "0" => system_styles.lock_height = Some(false),
+                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
                 "position" => {
                     match style.value.parse::<f32>() {
                         Ok(value) => system_styles.position = value,

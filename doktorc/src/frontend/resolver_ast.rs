@@ -99,6 +99,9 @@ pub struct SystemStyles {
     pub alignment_y: Option<Alignment>,
     pub width: f32,
     pub height: f32,
+    pub lock_dimensions: bool,
+    pub lock_width: Option<bool>,
+    pub lock_height: Option<bool>,
     pub position: f32,
     pub position_x: Option<f32>,
     pub position_y: Option<f32>,
@@ -123,6 +126,9 @@ impl SystemStyles {
             width: default_values::DEFAULT_WIDTH,
             height: default_values::DEFAULT_HEIGHT,
             position: default_values::DEFAULT_POSITION,
+            lock_dimensions: default_values::DEFAULT_LOCK_DIMENSIONS,
+            lock_width: None,
+            lock_height: None,
             position_x: None,
             position_y: None,
             content_color: default_values::DEFAULT_CONTENT_COLOR,
@@ -141,6 +147,14 @@ impl SystemStyles {
             "x" => self.alignment_x.or(Some(self.alignment)).unwrap_or(default_values::DEFAULT_ALIGNMENT),
             "y" => self.alignment_y.or(Some(self.alignment)).unwrap_or(default_values::DEFAULT_ALIGNMENT),
             _ => default_values::DEFAULT_ALIGNMENT,
+        }
+    }
+
+    pub fn get_unambiguous_lock_dimensions(&self, lock_dimensions_type: &str) -> bool {
+        match lock_dimensions_type {
+            "width" => self.lock_width.or(Some(self.lock_dimensions)).unwrap_or(default_values::DEFAULT_LOCK_DIMENSIONS),
+            "height" => self.lock_height.or(Some(self.lock_dimensions)).unwrap_or(default_values::DEFAULT_LOCK_DIMENSIONS),
+            _ => default_values::DEFAULT_LOCK_DIMENSIONS,
         }
     }
 

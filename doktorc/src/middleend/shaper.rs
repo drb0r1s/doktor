@@ -91,8 +91,11 @@ impl Shaper {
             // Not a leaf: width and height of the block are ignored (unless it is bigger than the minimal value), instead the size is determined based on the block's children.
             let style_width: f32 = block.system_styles.width;
             let style_height: f32 = block.system_styles.height;
+
+            let lock_width: bool = block.system_styles.get_unambiguous_lock_dimensions("width");
+            let lock_height: bool = block.system_styles.get_unambiguous_lock_dimensions("height");
             
-            match block.system_styles.layout {
+            let computed_dimensions: Size = match block.system_styles.layout {
                 Layout::Simple => match block.system_styles.direction {
                     // width: sum of children widths
                     // height: max children height
@@ -138,6 +141,11 @@ impl Shaper {
                         height: max_y.max(style_height),
                     }
                 }
+            };
+
+            Size {
+                width: if lock_width { style_width } else { computed_dimensions.width },
+                height: if lock_height { style_height } else { computed_dimensions.height },
             }
         };
 
