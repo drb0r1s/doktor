@@ -232,6 +232,8 @@ impl Shaper {
         let mut result = Vec::with_capacity(children.len());
         let mut scrollable_cursor: f32 = 0.0;
 
+        let line_count: f32 = lines.len() as f32;
+
         for line in &lines {
             let line_breakable_size: f32 = line.iter().map(|child| match parent_direction {
                 Direction::Horizontal => child.size.width,
@@ -260,11 +262,12 @@ impl Shaper {
                 };
 
                 let scrollable_leftover: f32 = (parent_scrollable_size - scrollable_size).max(0.0);
+                let scrollable_adjustment: f32 = line_scrollable_size * (line_count - 1.0); // Center and End have to be adjusted based on the number of lines blocks create.
 
                 let scrollable_offset: f32 = match scrollable_alignment {
                     Alignment::Start => 0.0,
-                    Alignment::Center => scrollable_leftover / 2.0,
-                    Alignment::End => scrollable_leftover,
+                    Alignment::Center => (scrollable_leftover - scrollable_adjustment) / 2.0,
+                    Alignment::End => scrollable_leftover - scrollable_adjustment,
                 };
 
                 let location: Location = match parent_direction {
