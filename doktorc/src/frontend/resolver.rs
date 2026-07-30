@@ -354,6 +354,33 @@ impl Resolver {
                     true
                 }
 
+                "spacing" => {
+                    match style.value.parse::<f32>() {
+                        Ok(value) => system_styles.spacing = value,
+                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
+                "margin" => {
+                    match style.value.parse::<f32>() {
+                        Ok(value) => system_styles.margin = Some(value),
+                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
+                "padding" => {
+                    match style.value.parse::<f32>() {
+                        Ok(value) => system_styles.padding = Some(value),
+                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
                 _ => false
             };
 

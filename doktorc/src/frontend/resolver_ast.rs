@@ -113,6 +113,9 @@ pub struct SystemStyles {
     pub border_size: f32,
     pub border_type: BorderType,
     pub opacity: f32,
+    pub spacing: f32,
+    pub margin: Option<f32>,
+    pub padding: Option<f32>,
 }
 
 impl SystemStyles {
@@ -139,6 +142,9 @@ impl SystemStyles {
             border_size: default_values::DEFAULT_BORDER_SIZE,
             border_type: default_values::DEFAULT_BORDER_TYPE,
             opacity: default_values::DEFAULT_OPACITY,
+            spacing: default_values::DEFAULT_SPACING,
+            margin: None,
+            padding: None,
         }
     }
 
@@ -163,6 +169,14 @@ impl SystemStyles {
             "x" => self.position_x.or(Some(self.position)).unwrap_or(default_values::DEFAULT_POSITION),
             "y" => self.position_y.or(Some(self.position)).unwrap_or(default_values::DEFAULT_POSITION),
             _ => default_values::DEFAULT_POSITION,
+        }
+    }
+
+    pub fn get_unambiguous_spacing(&self, spacing_type: &str) -> f32 {
+        match spacing_type {
+            "margin" => self.margin.or(Some(self.spacing)).unwrap_or(default_values::DEFAULT_SPACING),
+            "padding" => self.padding.or(Some(self.spacing)).unwrap_or(default_values::DEFAULT_SPACING),
+            _ => default_values::DEFAULT_SPACING,
         }
     }
 }

@@ -64,7 +64,7 @@ impl Shaper {
             sized
         }).collect();
 
-        let size: Size = if sized_children.is_empty() {
+        let mut size: Size = if sized_children.is_empty() {
             // Leaf: fixed size from its own width and height, or default.
             // If a block is of type Text, then JS measured width and height are used.
             if block.block_type == "Text" {
@@ -149,6 +149,17 @@ impl Shaper {
             }
         };
 
+        // We have to adjust block's size to the inset, in order to achieve correct sizing of the block and prevent overflow.
+        let inset_amount: f32 = block.system_styles.border_size + block.system_styles.get_unambiguous_spacing("padding");
+
+        if inset_amount > 0.0 {
+            size.width = (size.width + inset_amount * 2.0).max(0.0);
+            size.height = (size.height + inset_amount * 2.0).max(0.0);
+
+            block.system_styles.width = size.width;
+            block.system_styles.height = size.height;
+        }
+
         SizedResolverBlockNode {
             resolver_block_node: block,
             size,
@@ -159,7 +170,7 @@ impl Shaper {
     // Pass 2: top-down location defining.
 
     fn locate_children(&self, children: &Vec<SizedResolverBlockNode>, parent_styles: &SystemStyles, parent_location: Location, parent_size: Size) -> Vec<ShaperBlockNode> {
-        let (inset_location, inset_size): (Location, Size) = Self::apply_border_inset(parent_styles, parent_location, parent_size);
+        let (inset_location, inset_size): (Location, Size) = Self::apply_inset(parent_styles, parent_location, parent_size);
         
         match parent_styles.layout {
             Layout::Simple => {
@@ -235,14 +246,22 @@ impl Shaper {
         let line_count: f32 = lines.len() as f32;
 
         for line in &lines {
-            let line_breakable_size: f32 = line.iter().map(|child| match parent_direction {
-                Direction::Horizontal => child.size.width,
-                Direction::Vertical => child.size.height,
+            let line_breakable_size: f32 = line.iter().map(|child| {
+                let margin = child.resolver_block_node.system_styles.get_unambiguous_spacing("margin");
+
+                (match parent_direction {
+                    Direction::Horizontal => child.size.width,
+                    Direction::Vertical => child.size.height,
+                }) + margin * 2.0
             }).sum();
 
-            let line_scrollable_size: f32 = line.iter().map(|child| match parent_direction {
-                Direction::Horizontal => child.size.height,
-                Direction::Vertical => child.size.width,
+            let line_scrollable_size: f32 = line.iter().map(|child| {
+                let margin = child.resolver_block_node.system_styles.get_unambiguous_spacing("margin");
+
+                (match parent_direction {
+                    Direction::Horizontal => child.size.height,
+                    Direction::Vertical => child.size.width,
+                }) + margin * 2.0
             }).fold(0.0, f32::max);
 
             let line_breakable_leftover: f32 = (breakable_bound - get_breakable_parent_location(parent_location, parent_direction) - line_breakable_size).max(0.0);
@@ -256,9 +275,11 @@ impl Shaper {
             let mut breakable_cursor: f32 = line_breakable_start_offset;
 
             for child in line {
+                let child_margin: f32 = child.resolver_block_node.system_styles.get_unambiguous_spacing("margin");
+
                 let (breakable_size, scrollable_size): (f32, f32) = match parent_direction {
-                    Direction::Horizontal => (child.size.width, child.size.height),
-                    Direction::Vertical => (child.size.height, child.size.width),
+                    Direction::Horizontal => (child.size.width + child_margin * 2.0, child.size.height + child_margin * 2.0),
+                    Direction::Vertical => (child.size.height + child_margin * 2.0, child.size.width + child_margin * 2.0),
                 };
 
                 let scrollable_leftover: f32 = (parent_scrollable_size - scrollable_size).max(0.0);
@@ -272,13 +293,13 @@ impl Shaper {
 
                 let location: Location = match parent_direction {
                     Direction::Horizontal => Location {
-                        x: parent_location.x + breakable_cursor,
-                        y: parent_location.y + scrollable_cursor + scrollable_offset,
+                        x: parent_location.x + breakable_cursor + child_margin,
+                        y: parent_location.y + scrollable_cursor + scrollable_offset + child_margin,
                     },
 
                     Direction::Vertical => Location {
-                        x: parent_location.x + scrollable_cursor + scrollable_offset,
-                        y: parent_location.y + breakable_cursor,
+                        x: parent_location.x + scrollable_cursor + scrollable_offset + child_margin,
+                        y: parent_location.y + breakable_cursor + child_margin,
                     },
                 };
 
@@ -292,21 +313,22 @@ impl Shaper {
         result
     }
 
-    fn apply_border_inset(parent_styles: &SystemStyles, parent_location: Location, parent_size: Size) -> (Location, Size) {
-        let border_size: f32 = parent_styles.border_size;
+    // Inset is currently affected by border_size and padding.
+    fn apply_inset(parent_styles: &SystemStyles, parent_location: Location, parent_size: Size) -> (Location, Size) {
+        let inset_amount: f32 = parent_styles.border_size + parent_styles.get_unambiguous_spacing("padding");
 
-        if border_size <= 0.0 {
+        if inset_amount <= 0.0 {
             return (parent_location, parent_size);
         }
 
         let inset_location = Location {
-            x: parent_location.x + border_size,
-            y: parent_location.y + border_size,
+            x: parent_location.x + inset_amount,
+            y: parent_location.y + inset_amount,
         };
 
         let inset_size = Size {
-            width: (parent_size.width - border_size * 2.0).max(0.0),
-            height: (parent_size.height - border_size * 2.0).max(0.0),
+            width: (parent_size.width - inset_amount * 2.0).max(0.0),
+            height: (parent_size.height - inset_amount * 2.0).max(0.0),
         };
 
         (inset_location, inset_size)
@@ -325,7 +347,7 @@ impl Shaper {
             arbitrary_attributes: sized_resolver_block_node.resolver_block_node.arbitrary_attributes.clone(),
             system_styles,
             arbitrary_styles: sized_resolver_block_node.resolver_block_node.arbitrary_styles.clone(),
-            size: sized_resolver_block_node.size,
+            size: sized_resolver_block_node.size.clone(),
             location,
             children,
             line: sized_resolver_block_node.resolver_block_node.line,

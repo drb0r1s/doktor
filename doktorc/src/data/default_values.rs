@@ -24,3 +24,5 @@ pub const DEFAULT_BORDER_SIZE: f32 = 0.0;
 pub const DEFAULT_BORDER_TYPE: BorderType = BorderType::None;
 
 pub const DEFAULT_OPACITY: f32 = 1.0;
+
+pub const DEFAULT_SPACING: f32 = 0.0;
