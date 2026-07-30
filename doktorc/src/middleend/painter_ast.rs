@@ -1,12 +1,13 @@
 use crate::frontend::resolver_ast::{RGB, Font, BorderType};
 
-use crate::middleend::shaper_ast::Location;
+use crate::middleend::shaper_ast::{Location, Clip};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Rectangle {
     pub location: Location,
     pub width: f32,
     pub height: f32,
+    pub clip: Clip,
     pub background_color: RGB,
     pub border_color: RGB,
     pub border_size: f32,

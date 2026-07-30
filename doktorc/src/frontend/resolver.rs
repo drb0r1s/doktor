@@ -1,7 +1,7 @@
 use std::fmt;
 
 use crate::frontend::parser_ast::{Attribute, Style, ParserBlockNode, ParserDoktorNode};
-use crate::frontend::resolver_ast::{RGB, Layout, Direction, Alignment, parse_font, BorderType, SystemAttributes, SystemStyles, ResolverBlockNode, ResolverDoktorNode};
+use crate::frontend::resolver_ast::{RGB, Layout, Direction, Alignment, parse_font, BorderType, Overflow, SystemAttributes, SystemStyles, ResolverBlockNode, ResolverDoktorNode};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct SemanticWarning {
@@ -376,6 +376,39 @@ impl Resolver {
                     match style.value.parse::<f32>() {
                         Ok(value) => system_styles.padding = Some(value),
                         Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
+                "overflow" => {
+                    match style.value.as_str() {
+                        "true" | "1" => system_styles.overflow = Overflow::True,
+                        "false" | "0" => system_styles.overflow = Overflow::False,
+                        "scroll" => system_styles.overflow = Overflow::Scroll,
+                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
+                "overflow_x" => {
+                    match style.value.as_str() {
+                        "true" | "1" => system_styles.overflow_x = Some(Overflow::True),
+                        "false" | "0" => system_styles.overflow_x = Some(Overflow::False),
+                        "scroll" => system_styles.overflow_x = Some(Overflow::Scroll),
+                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
+                "overflow_y" => {
+                    match style.value.as_str() {
+                        "true" | "1" => system_styles.overflow_y = Some(Overflow::True),
+                        "false" | "0" => system_styles.overflow_y = Some(Overflow::False),
+                        "scroll" => system_styles.overflow_y = Some(Overflow::Scroll),
+                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
                     }
 
                     true

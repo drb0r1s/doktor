@@ -1,4 +1,4 @@
-use crate::frontend::resolver_ast::{RGB, Layout, Direction, Alignment, Font, BorderType};
+use crate::frontend::resolver_ast::{RGB, Layout, Direction, Alignment, Font, BorderType, Overflow};
 
 pub const DEFAULT_LAYOUT: Layout = Layout::Simple;
 pub const DEFAULT_DIRECTION: Direction = Direction::Horizontal;
@@ -26,3 +26,5 @@ pub const DEFAULT_BORDER_TYPE: BorderType = BorderType::None;
 pub const DEFAULT_OPACITY: f32 = 1.0;
 
 pub const DEFAULT_SPACING: f32 = 0.0;
+
+pub const DEFAULT_OVERFLOW: Overflow = Overflow::False;

@@ -43,6 +43,10 @@ impl Packer {
         row[packet_structure::PACKET_Y] = rectangle.location.y;
         row[packet_structure::PACKET_WIDTH] = rectangle.width;
         row[packet_structure::PACKET_HEIGHT] = rectangle.height;
+        row[packet_structure::PACKET_CLIP_X_START] = rectangle.clip.x.0;
+        row[packet_structure::PACKET_CLIP_X_END] = rectangle.clip.x.1;
+        row[packet_structure::PACKET_CLIP_Y_START] = rectangle.clip.y.0;
+        row[packet_structure::PACKET_CLIP_Y_END] = rectangle.clip.y.1;
         row[packet_structure::PACKET_BACKGROUND_COLOR] = Self::pack_color(rectangle.background_color);
         row[packet_structure::PACKET_BACKGROUND_COLOR_ALPHA] = rectangle.background_color.a as f32;
         row[packet_structure::PACKET_BORDER_COLOR] = Self::pack_color(rectangle.border_color);

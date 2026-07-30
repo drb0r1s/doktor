@@ -12,6 +12,12 @@ pub struct Location {
     pub y: f32,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Clip {
+    pub x: (f32, f32),
+    pub y: (f32, f32),
+}
+
 #[derive(serde::Deserialize)]
 pub struct TextMeasurement {
     pub path: Vec<usize>,
@@ -31,6 +37,7 @@ pub struct ShaperBlockNode {
 
     pub size: Size,
     pub location: Location,
+    pub clip: Clip,
 
     pub children: Vec<ShaperBlockNode>,
     pub line: usize,

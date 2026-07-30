@@ -78,6 +78,13 @@ pub enum BorderType {
     Dotted = 3,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Overflow {
+    False = 0,
+    True = 1,
+    Scroll = 2,
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SystemAttributes {
     // Image
@@ -116,6 +123,9 @@ pub struct SystemStyles {
     pub spacing: f32,
     pub margin: Option<f32>,
     pub padding: Option<f32>,
+    pub overflow: Overflow,
+    pub overflow_x: Option<Overflow>,
+    pub overflow_y: Option<Overflow>,
 }
 
 impl SystemStyles {
@@ -145,6 +155,9 @@ impl SystemStyles {
             spacing: default_values::DEFAULT_SPACING,
             margin: None,
             padding: None,
+            overflow: default_values::DEFAULT_OVERFLOW,
+            overflow_x: None,
+            overflow_y: None,
         }
     }
 
@@ -177,6 +190,14 @@ impl SystemStyles {
             "margin" => self.margin.or(Some(self.spacing)).unwrap_or(default_values::DEFAULT_SPACING),
             "padding" => self.padding.or(Some(self.spacing)).unwrap_or(default_values::DEFAULT_SPACING),
             _ => default_values::DEFAULT_SPACING,
+        }
+    }
+
+    pub fn get_unambiguous_overflow(&self, overflow_type: &str) -> Overflow {
+        match overflow_type {
+            "x" => self.overflow_x.or(Some(self.overflow)).unwrap_or(default_values::DEFAULT_OVERFLOW),
+            "y" => self.overflow_y.or(Some(self.overflow)).unwrap_or(default_values::DEFAULT_OVERFLOW),
+            _ => default_values::DEFAULT_OVERFLOW,
         }
     }
 }

@@ -71,6 +71,7 @@ impl Painter {
                     location: block.location,
                     width: block.size.width,
                     height: block.size.height,
+                    clip: block.clip,
                     background_color: block.system_styles.background_color,
                     border_color: block.system_styles.border_color,
                     border_size: block.system_styles.border_size,

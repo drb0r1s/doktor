@@ -135,6 +135,7 @@ export class WebglRenderer {
         const gl = this.gl;
 
         gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+        gl.disable(gl.SCISSOR_TEST);
         gl.clearColor(0, 0, 0, 0);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
@@ -154,6 +155,11 @@ export class WebglRenderer {
                 const width = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_WIDTH];
                 const height = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_HEIGHT];
 
+                const clipXStart = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_CLIP_X_START];
+                const clipXEnd = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_CLIP_X_END];
+                const clipYStart = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_CLIP_Y_START];
+                const clipYEnd = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_CLIP_Y_END];
+
                 const backgroundColor = unpackColor(numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BACKGROUND_COLOR]);
                 const backgroundColorAlpha = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BACKGROUND_COLOR_ALPHA];
 
@@ -165,6 +171,7 @@ export class WebglRenderer {
 
                 const opacity = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_OPACITY];
 
+                this.applyScissor(clipXStart, clipXEnd, clipYStart, clipYEnd);
                 this.drawRectangle(x, y, width, height, backgroundColor.r / 255, backgroundColor.g / 255, backgroundColor.b / 255, backgroundColorAlpha / 255, borderColor.r / 255, borderColor.g / 255, borderColor.b / 255, borderColorAlpha / 255, borderSize, borderType, opacity);
             }
             
@@ -174,6 +181,11 @@ export class WebglRenderer {
 
                 const width = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_WIDTH];
                 const height = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_HEIGHT];
+
+                const clipXStart = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_CLIP_X_START];
+                const clipXEnd = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_CLIP_X_END];
+                const clipYStart = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_CLIP_Y_START];
+                const clipYEnd = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_CLIP_Y_END];
 
                 const offset = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_STRING_OFFSET];
                 const length = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_STRING_LENGTH];
@@ -194,6 +206,7 @@ export class WebglRenderer {
 
                 const opacity = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_OPACITY];
 
+                this.applyScissor(clipXStart, clipXEnd, clipYStart, clipYEnd);
                 this.drawImage(x, y, width, height, texture, backgroundColor.r / 255, backgroundColor.g / 255, backgroundColor.b / 255, backgroundColorAlpha / 255, borderColor.r / 255, borderColor.g / 255, borderColor.b / 255, borderColorAlpha / 255, borderSize, borderType, opacity);
             }
         }
@@ -300,5 +313,18 @@ export class WebglRenderer {
         gl.bindTexture(gl.TEXTURE_2D, texture);
 
         gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
+
+    applyScissor(clipXStart, clipXEnd, clipYStart, clipYEnd) {
+        const gl = this.gl;
+
+        const scissorWidth = Math.max(0, clipXEnd - clipXStart);
+        const scissorHeight = Math.max(0, clipYEnd - clipYStart);
+
+        // WebGL's scissor origin is bottom-left, but our clip coordinates are top-left, y-down.
+        const scissorY = this.canvas.height - clipYEnd;
+
+        gl.enable(gl.SCISSOR_TEST);
+        gl.scissor(clipXStart, scissorY, scissorWidth, scissorHeight);
     }
 }
