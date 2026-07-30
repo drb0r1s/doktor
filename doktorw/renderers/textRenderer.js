@@ -17,14 +17,19 @@ export class TextRenderer {
 
         const decoder = new TextDecoder("utf-8");
 
-        for (let i = 0; i < drawStructuresCount; i++) {
+        for(let i = 0; i < drawStructuresCount; i++) {
             const rowStart = i * PACKET_STRUCTURE.PACKET_SIZE;
             const type = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_TYPE];
 
-            if (type !== PACKET_STRUCTURE.PACKET_TEXT_TYPE) continue;
+            if(type !== PACKET_STRUCTURE.PACKET_TEXT_TYPE) continue;
 
             const x = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_X];
             const y = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_Y];
+
+            const clipXStart = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_CLIP_X_START];
+            const clipXEnd = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_CLIP_X_END];
+            const clipYStart = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_CLIP_Y_START];
+            const clipYEnd = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_CLIP_Y_END];
 
             const backgroundColor = unpackColor(numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BACKGROUND_COLOR]);
             const backgroundColorAlpha = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BACKGROUND_COLOR_ALPHA];
@@ -55,6 +60,11 @@ export class TextRenderer {
             const textWidth = metrics.width;
             const textHeight = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
 
+            context.save();
+            context.beginPath();
+            context.rect(clipXStart, clipYStart, Math.max(0, clipXEnd - clipXStart), Math.max(0, clipYEnd - clipYStart));
+            context.clip();
+
             context.globalAlpha = opacity;
 
             context.fillStyle = `rgba(${backgroundColor.r}, ${backgroundColor.g}, ${backgroundColor.b}, ${backgroundColorAlpha / 255})`;
@@ -75,6 +85,7 @@ export class TextRenderer {
             context.fillText(content, x, y);
 
             context.globalAlpha = 1.0;
+            context.restore();
         }
     }
 }

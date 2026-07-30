@@ -18,6 +18,7 @@ pub struct Rectangle {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Text {
     pub location: Location,
+    pub clip: Clip,
     pub content: String,
     pub content_color: RGB,
     pub content_size: f32,

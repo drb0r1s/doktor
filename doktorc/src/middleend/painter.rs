@@ -54,6 +54,7 @@ impl Painter {
 
                 Some(DrawStructure::Text(Text {
                     location: block.location,
+                    clip: block.clip,
                     content,
                     content_color: block.system_styles.content_color,
                     content_size: block.system_styles.content_size,
