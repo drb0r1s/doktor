@@ -121,8 +121,20 @@ pub struct SystemStyles {
     pub border_type: BorderType,
     pub opacity: f32,
     pub spacing: f32,
+    pub spacing_top: Option<f32>,
+    pub spacing_bottom: Option<f32>,
+    pub spacing_left: Option<f32>,
+    pub spacing_right: Option<f32>,
     pub margin: Option<f32>,
+    pub margin_top: Option<f32>,
+    pub margin_bottom: Option<f32>,
+    pub margin_left: Option<f32>,
+    pub margin_right: Option<f32>,
     pub padding: Option<f32>,
+    pub padding_top: Option<f32>,
+    pub padding_bottom: Option<f32>,
+    pub padding_left: Option<f32>,
+    pub padding_right: Option<f32>,
     pub overflow: Overflow,
     pub overflow_x: Option<Overflow>,
     pub overflow_y: Option<Overflow>,
@@ -153,8 +165,20 @@ impl SystemStyles {
             border_type: default_values::DEFAULT_BORDER_TYPE,
             opacity: default_values::DEFAULT_OPACITY,
             spacing: default_values::DEFAULT_SPACING,
+            spacing_top: None,
+            spacing_bottom: None,
+            spacing_left: None,
+            spacing_right: None,
             margin: None,
+            margin_top: None,
+            margin_bottom: None,
+            margin_left: None,
+            margin_right: None,
             padding: None,
+            padding_top: None,
+            padding_bottom: None,
+            padding_left: None,
+            padding_right: None,
             overflow: default_values::DEFAULT_OVERFLOW,
             overflow_x: None,
             overflow_y: None,
@@ -185,10 +209,25 @@ impl SystemStyles {
         }
     }
 
-    pub fn get_unambiguous_spacing(&self, spacing_type: &str) -> f32 {
+    pub fn get_unambiguous_spacing(&self, spacing_type: &str, orientation: &str) -> f32 {
         match spacing_type {
-            "margin" => self.margin.or(Some(self.spacing)).unwrap_or(default_values::DEFAULT_SPACING),
-            "padding" => self.padding.or(Some(self.spacing)).unwrap_or(default_values::DEFAULT_SPACING),
+            "margin" => match orientation {
+                "all" => self.margin.or(Some(self.spacing)).unwrap_or(default_values::DEFAULT_SPACING),
+                "top" => self.margin_top.or(self.margin).or(self.spacing_top).or(Some(self.spacing)).unwrap_or(default_values::DEFAULT_SPACING),
+                "bottom" => self.margin_bottom.or(self.margin).or(self.spacing_bottom).or(Some(self.spacing)).unwrap_or(default_values::DEFAULT_SPACING),
+                "left" => self.margin_left.or(self.margin).or(self.spacing_left).or(Some(self.spacing)).unwrap_or(default_values::DEFAULT_SPACING),
+                "right" => self.margin_right.or(self.margin).or(self.spacing_right).or(Some(self.spacing)).unwrap_or(default_values::DEFAULT_SPACING),
+                _ => default_values::DEFAULT_SPACING,
+            },
+
+            "padding" => match orientation {
+                "all" => self.padding.or(Some(self.spacing)).unwrap_or(default_values::DEFAULT_SPACING),
+                "top" => self.padding_top.or(self.padding).or(self.spacing_top).or(Some(self.spacing)).unwrap_or(default_values::DEFAULT_SPACING),
+                "bottom" => self.padding_bottom.or(self.padding).or(self.spacing_bottom).or(Some(self.spacing)).unwrap_or(default_values::DEFAULT_SPACING),
+                "left" => self.padding_left.or(self.padding).or(self.spacing_left).or(Some(self.spacing)).unwrap_or(default_values::DEFAULT_SPACING),
+                "right" => self.padding_right.or(self.padding).or(self.spacing_right).or(Some(self.spacing)).unwrap_or(default_values::DEFAULT_SPACING),
+                _ => default_values::DEFAULT_SPACING,
+            },
             _ => default_values::DEFAULT_SPACING,
         }
     }

@@ -165,11 +165,17 @@ impl Shaper {
         };
 
         // We have to adjust block's size to the inset, in order to achieve correct sizing of the block and prevent overflow.
-        let inset_amount: f32 = block.system_styles.border_size + block.system_styles.get_unambiguous_spacing("padding");
+        let padding_top: f32 = block.system_styles.get_unambiguous_spacing("padding", "top");
+        let padding_bottom: f32 = block.system_styles.get_unambiguous_spacing("padding", "bottom");
+        let padding_left: f32 = block.system_styles.get_unambiguous_spacing("padding", "left");
+        let padding_right: f32 = block.system_styles.get_unambiguous_spacing("padding", "right");
 
-        if inset_amount > 0.0 {
-            size.width = (size.width + inset_amount * 2.0).max(0.0);
-            size.height = (size.height + inset_amount * 2.0).max(0.0);
+        let inset_x: f32 = padding_left + padding_right + block.system_styles.border_size * 2.0;
+        let inset_y: f32 = padding_top + padding_bottom + block.system_styles.border_size * 2.0;
+
+        if inset_x > 0.0 || inset_y > 0.0 {
+            size.width = (size.width + inset_x).max(0.0);
+            size.height = (size.height + inset_y).max(0.0);
 
             block.system_styles.width = size.width;
             block.system_styles.height = size.height;
@@ -230,7 +236,7 @@ impl Shaper {
                 Direction::Vertical => child.size.height,
             };
 
-            let parent_breakable_location: f32 = get_breakable_parent_location(parent_location, parent_direction);
+            let parent_breakable_location: f32 = Self::get_breakable_parent_location(parent_location, parent_direction);
 
             if breakable_cursor > 0.0 && parent_breakable_location + breakable_cursor + breakable_size > breakable_bound {
                 lines.push(std::mem::take(&mut current_line));
@@ -262,24 +268,24 @@ impl Shaper {
 
         for line in &lines {
             let line_breakable_size: f32 = line.iter().map(|child| {
-                let margin = child.resolver_block_node.system_styles.get_unambiguous_spacing("margin");
+                let (margin_start, margin_end): (f32, f32) = Self::get_breakable_margin(&child.resolver_block_node.system_styles, parent_direction);
 
                 (match parent_direction {
                     Direction::Horizontal => child.size.width,
                     Direction::Vertical => child.size.height,
-                }) + margin * 2.0
+                }) + margin_start + margin_end
             }).sum();
 
             let line_scrollable_size: f32 = line.iter().map(|child| {
-                let margin = child.resolver_block_node.system_styles.get_unambiguous_spacing("margin");
+                let (margin_start, margin_end): (f32, f32) = Self::get_scrollable_margin(&child.resolver_block_node.system_styles, parent_direction);
 
                 (match parent_direction {
                     Direction::Horizontal => child.size.height,
                     Direction::Vertical => child.size.width,
-                }) + margin * 2.0
+                }) + margin_start + margin_end
             }).fold(0.0, f32::max);
 
-            let line_breakable_leftover: f32 = (breakable_bound - get_breakable_parent_location(parent_location, parent_direction) - line_breakable_size).max(0.0);
+            let line_breakable_leftover: f32 = (breakable_bound - line_breakable_size).max(0.0);
 
             let line_breakable_start_offset: f32 = match breakable_alignment {
                 Alignment::Start => 0.0,
@@ -290,11 +296,12 @@ impl Shaper {
             let mut breakable_cursor: f32 = line_breakable_start_offset;
 
             for child in line {
-                let child_margin: f32 = child.resolver_block_node.system_styles.get_unambiguous_spacing("margin");
+                let (breakable_margin_start, breakable_margin_end): (f32, f32) = Self::get_breakable_margin(&child.resolver_block_node.system_styles, parent_direction);
+                let (scrollable_margin_start, scrollable_margin_end): (f32, f32) = Self::get_scrollable_margin(&child.resolver_block_node.system_styles, parent_direction);
 
                 let (breakable_size, scrollable_size): (f32, f32) = match parent_direction {
-                    Direction::Horizontal => (child.size.width + child_margin * 2.0, child.size.height + child_margin * 2.0),
-                    Direction::Vertical => (child.size.height + child_margin * 2.0, child.size.width + child_margin * 2.0),
+                    Direction::Horizontal => (child.size.width + breakable_margin_start + breakable_margin_end, child.size.height + scrollable_margin_start + scrollable_margin_end),
+                    Direction::Vertical => (child.size.height + breakable_margin_start + breakable_margin_end, child.size.width + scrollable_margin_start + scrollable_margin_end),
                 };
 
                 let scrollable_leftover: f32 = (parent_scrollable_size - scrollable_size).max(0.0);
@@ -308,13 +315,13 @@ impl Shaper {
 
                 let location: Location = match parent_direction {
                     Direction::Horizontal => Location {
-                        x: parent_location.x + breakable_cursor + child_margin,
-                        y: parent_location.y + scrollable_cursor + scrollable_offset + child_margin,
+                        x: parent_location.x + breakable_cursor + breakable_margin_start,
+                        y: parent_location.y + scrollable_cursor + scrollable_offset + scrollable_margin_start,
                     },
 
                     Direction::Vertical => Location {
-                        x: parent_location.x + scrollable_cursor + scrollable_offset + child_margin,
-                        y: parent_location.y + breakable_cursor + child_margin,
+                        x: parent_location.x + scrollable_cursor + scrollable_offset + scrollable_margin_start,
+                        y: parent_location.y + breakable_cursor + breakable_margin_start,
                     },
                 };
 
@@ -330,20 +337,21 @@ impl Shaper {
 
     // Inset is currently affected by border_size and padding.
     fn apply_inset(parent_styles: &SystemStyles, parent_location: Location, parent_size: Size) -> (Location, Size) {
-        let inset_amount: f32 = parent_styles.border_size + parent_styles.get_unambiguous_spacing("padding");
+        let padding_top: f32 = parent_styles.get_unambiguous_spacing("padding", "top");
+        let padding_bottom: f32 = parent_styles.get_unambiguous_spacing("padding", "bottom");
+        let padding_left: f32 = parent_styles.get_unambiguous_spacing("padding", "left");
+        let padding_right: f32 = parent_styles.get_unambiguous_spacing("padding", "right");
 
-        if inset_amount <= 0.0 {
-            return (parent_location, parent_size);
-        }
+        let border_size: f32 = parent_styles.border_size;
 
         let inset_location = Location {
-            x: parent_location.x + inset_amount,
-            y: parent_location.y + inset_amount,
+            x: parent_location.x + padding_left + border_size,
+            y: parent_location.y + padding_top + border_size,
         };
 
         let inset_size = Size {
-            width: (parent_size.width - inset_amount * 2.0).max(0.0),
-            height: (parent_size.height - inset_amount * 2.0).max(0.0),
+            width: (parent_size.width - padding_left - padding_right - border_size * 2.0).max(0.0),
+            height: (parent_size.height - padding_top - padding_bottom - border_size * 2.0).max(0.0),
         };
 
         (inset_location, inset_size)
@@ -386,12 +394,26 @@ impl Shaper {
             column: sized_resolver_block_node.resolver_block_node.column,
         }
     }
-}
 
-fn get_breakable_parent_location(location: Location, direction: Direction) -> f32 {
-    match direction {
-        Direction::Horizontal => location.x,
-        Direction::Vertical => location.y,
+    fn get_breakable_parent_location(location: Location, direction: Direction) -> f32 {
+        match direction {
+            Direction::Horizontal => location.x,
+            Direction::Vertical => location.y,
+        }
+    }
+
+    fn get_breakable_margin(styles: &SystemStyles, direction: Direction) -> (f32, f32) {
+        match direction {
+            Direction::Horizontal => (styles.get_unambiguous_spacing("margin", "left"), styles.get_unambiguous_spacing("margin", "right")),
+            Direction::Vertical => (styles.get_unambiguous_spacing("margin", "top"), styles.get_unambiguous_spacing("margin", "bottom")),
+        }
+    }
+
+    fn get_scrollable_margin(styles: &SystemStyles, direction: Direction) -> (f32, f32) {
+        match direction {
+            Direction::Horizontal => (styles.get_unambiguous_spacing("margin", "top"), styles.get_unambiguous_spacing("margin", "bottom")),
+            Direction::Vertical => (styles.get_unambiguous_spacing("margin", "left"), styles.get_unambiguous_spacing("margin", "right")),
+        }
     }
 }
 

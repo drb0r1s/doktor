@@ -363,6 +363,42 @@ impl Resolver {
                     true
                 }
 
+                "spacing_top" => {
+                    match style.value.parse::<f32>() {
+                        Ok(value) => system_styles.spacing_top = Some(value),
+                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
+                "spacing_bottom" => {
+                    match style.value.parse::<f32>() {
+                        Ok(value) => system_styles.spacing_bottom = Some(value),
+                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
+                "spacing_left" => {
+                    match style.value.parse::<f32>() {
+                        Ok(value) => system_styles.spacing_left = Some(value),
+                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
+                "spacing_right" => {
+                    match style.value.parse::<f32>() {
+                        Ok(value) => system_styles.spacing_right = Some(value),
+                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
                 "margin" => {
                     match style.value.parse::<f32>() {
                         Ok(value) => system_styles.margin = Some(value),
@@ -372,9 +408,81 @@ impl Resolver {
                     true
                 }
 
+                "margin_top" => {
+                    match style.value.parse::<f32>() {
+                        Ok(value) => system_styles.margin_top = Some(value),
+                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
+                "margin_bottom" => {
+                    match style.value.parse::<f32>() {
+                        Ok(value) => system_styles.margin_bottom = Some(value),
+                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
+                "margin_left" => {
+                    match style.value.parse::<f32>() {
+                        Ok(value) => system_styles.margin_left = Some(value),
+                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
+                "margin_right" => {
+                    match style.value.parse::<f32>() {
+                        Ok(value) => system_styles.margin_right = Some(value),
+                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
                 "padding" => {
                     match style.value.parse::<f32>() {
                         Ok(value) => system_styles.padding = Some(value),
+                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
+                "padding_top" => {
+                    match style.value.parse::<f32>() {
+                        Ok(value) => system_styles.padding_top = Some(value),
+                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
+                "padding_bottom" => {
+                    match style.value.parse::<f32>() {
+                        Ok(value) => system_styles.padding_bottom = Some(value),
+                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
+                "padding_left" => {
+                    match style.value.parse::<f32>() {
+                        Ok(value) => system_styles.padding_left = Some(value),
+                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
+                "padding_right" => {
+                    match style.value.parse::<f32>() {
+                        Ok(value) => system_styles.padding_right = Some(value),
                         Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
                     }
 
