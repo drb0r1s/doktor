@@ -4,8 +4,8 @@ pub const DEFAULT_LAYOUT: Layout = Layout::Simple;
 pub const DEFAULT_DIRECTION: Direction = Direction::Horizontal;
 pub const DEFAULT_ALIGNMENT: Alignment = Alignment::Start;
 
-pub const DEFAULT_WIDTH: f32 = 100.0;
-pub const DEFAULT_HEIGHT: f32 = 100.0;
+pub const DEFAULT_WIDTH: f32 = 0.0;
+pub const DEFAULT_HEIGHT: f32 = 0.0;
 
 pub const DEFAULT_LOCK_DIMENSIONS: bool = false;
 

@@ -1,7 +1,8 @@
-import init, { compile, getTextMeasurementRequests } from "../doktorr/pkg/doktorr.js";
+import init, { compile, getTextMeasurementRequests, getImageMeasurementRequests } from "../doktorr/pkg/doktorr.js";
 import { WebglRenderer } from "./renderers/webgl/webglRenderer.js";
 import { TextRenderer } from "./renderers/textRenderer.js";
 import { measureTexts } from "./functions/measureTexts.js";
+import { measureImages } from "./functions/measureImages.js";
 
 async function run() {
     await init(); // Loads .wasm, has to be written first.
@@ -12,7 +13,10 @@ async function run() {
     const textMeasurementRequests = getTextMeasurementRequests(bytes);
     const textMeasurements = measureTexts(textMeasurementRequests);
 
-    const parsed = compile(bytes, window.innerWidth, window.innerHeight, textMeasurements);
+    const imageMeasurementRequests = getImageMeasurementRequests(bytes);
+    const imageMeasurements = await measureImages(imageMeasurementRequests);
+
+    const parsed = compile(bytes, window.innerWidth, window.innerHeight, textMeasurements, imageMeasurements);
 
     const numericBuffer = parsed.numericBuffer();
     const stringTable = parsed.stringTable();

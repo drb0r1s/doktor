@@ -1,6 +1,6 @@
 use crate::frontend::resolver_ast::{SystemStyles, Alignment, Direction, Layout, Overflow, ResolverBlockNode, ResolverDoktorNode};
 
-use crate::middleend::shaper_ast::{Size, Location, Clip, TextMeasurement, ShaperBlockNode, ShaperDoktorNode};
+use crate::middleend::shaper_ast::{Size, Location, Clip, TextMeasurement, ImageMeasurement, ShaperBlockNode, ShaperDoktorNode};
 
 struct SizedResolverBlockNode {
     resolver_block_node: ResolverBlockNode,
@@ -21,13 +21,13 @@ impl Shaper {
         }
     }
 
-    pub fn shape(&self, resolver_doktor_node: ResolverDoktorNode, text_measurements: &[TextMeasurement]) -> ShaperDoktorNode {
+    pub fn shape(&self, resolver_doktor_node: ResolverDoktorNode, text_measurements: &[TextMeasurement], image_measurements: &[ImageMeasurement]) -> ShaperDoktorNode {
         // Pass 1: bottom-up sizing.
         let mut path: Vec<usize> = Vec::new();
 
         let sized_children: Vec<SizedResolverBlockNode> = resolver_doktor_node.children.into_iter().enumerate().map(|(index, resolver_block_node)| {
             path.push(index);
-            let sized = self.size_block(resolver_block_node, text_measurements, &mut path);
+            let sized = self.size_block(resolver_block_node, text_measurements, image_measurements, &mut path);
             path.pop();
 
             sized
@@ -57,12 +57,12 @@ impl Shaper {
 
     // Pass 1: bottom-up sizing.
 
-    fn size_block(&self, mut block: ResolverBlockNode, text_measurements: &[TextMeasurement], path: &mut Vec<usize>) -> SizedResolverBlockNode {
+    fn size_block(&self, mut block: ResolverBlockNode, text_measurements: &[TextMeasurement], image_measurements: &[ImageMeasurement], path: &mut Vec<usize>) -> SizedResolverBlockNode {
         let children: Vec<ResolverBlockNode> = std::mem::take(&mut block.children);
 
         let sized_children: Vec<SizedResolverBlockNode> = children.into_iter().enumerate().map(|(index, child)| {
             path.push(index);
-            let sized = self.size_block(child, text_measurements, path);
+            let sized = self.size_block(child, text_measurements, image_measurements, path);
             path.pop();
 
             sized
@@ -82,6 +82,17 @@ impl Shaper {
                         width: block.system_styles.width,
                         height: block.system_styles.height,
                     },
+                }
+            }
+
+            else if block.block_type == "Image" {
+                match image_measurements.iter().find(|image_measurement| &image_measurement.path == path) {
+                    Some(measurement) => Size {
+                        width: if block.system_styles.width > 0.0 { block.system_styles.width } else { measurement.width },
+                        height: if block.system_styles.height > 0.0 { block.system_styles.height } else { measurement.height },
+                    },
+
+                    None => Size { width: block.system_styles.width, height: block.system_styles.height },
                 }
             }
             

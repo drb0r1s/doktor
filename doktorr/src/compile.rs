@@ -1,7 +1,7 @@
 use wasm_bindgen::prelude::*;
 use js_sys::{Float32Array, Uint8Array};
 
-use doktorc::middleend::shaper_ast::TextMeasurement;
+use doktorc::middleend::shaper_ast::{TextMeasurement, ImageMeasurement};
 use doktorc::middleend::shaper::Shaper;
 use doktorc::middleend::painter::Painter;
 
@@ -27,12 +27,13 @@ impl ParsedDoktorb {
 }
 
 #[wasm_bindgen(js_name=compile)]
-pub fn compile(written_doktorb: &[u8], viewport_width: f32, viewport_height: f32, js_text_measurements: JsValue) -> Result<ParsedDoktorb, JsValue> {
+pub fn compile(written_doktorb: &[u8], viewport_width: f32, viewport_height: f32, js_text_measurements: JsValue, js_image_measurements: JsValue) -> Result<ParsedDoktorb, JsValue> {
     let resolver_doktor_node = bincode::deserialize(written_doktorb).map_err(|e| JsValue::from_str(&format!("Failed to deserialize: {e}")))?;
 
     let text_measurements: Vec<TextMeasurement> = serde_wasm_bindgen::from_value(js_text_measurements).map_err(|e| JsValue::from_str(&format!("Failed to parse measurements: {e}")))?;
+    let image_measurements: Vec<ImageMeasurement> = serde_wasm_bindgen::from_value(js_image_measurements).map_err(|e| JsValue::from_str(&format!("Failed to parse measurements: {e}")))?;
 
-    let shaper_doktor_node = Shaper::new(viewport_width, viewport_height).shape(resolver_doktor_node, &text_measurements);
+    let shaper_doktor_node = Shaper::new(viewport_width, viewport_height).shape(resolver_doktor_node, &text_measurements, &image_measurements);
     let draw_structures = Painter::new().paint(shaper_doktor_node);
 
     let packed_packets = Packer::new().pack(&draw_structures);
