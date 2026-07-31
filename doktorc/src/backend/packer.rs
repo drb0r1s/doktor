@@ -89,6 +89,10 @@ impl Packer {
         row[packet_structure::PACKET_Y] = image.location.y;
         row[packet_structure::PACKET_WIDTH] = image.width;
         row[packet_structure::PACKET_HEIGHT] = image.height;
+        row[packet_structure::PACKET_CLIP_X_START] = image.clip.x.0;
+        row[packet_structure::PACKET_CLIP_X_END] = image.clip.x.1;
+        row[packet_structure::PACKET_CLIP_Y_START] = image.clip.y.0;
+        row[packet_structure::PACKET_CLIP_Y_END] = image.clip.y.1;
         row[packet_structure::PACKET_BACKGROUND_COLOR] = Self::pack_color(image.background_color);
         row[packet_structure::PACKET_BACKGROUND_COLOR_ALPHA] = image.background_color.a as f32;
         row[packet_structure::PACKET_STRING_OFFSET] = offset as f32;

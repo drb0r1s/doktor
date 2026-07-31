@@ -255,7 +255,7 @@ export class WebglRenderer {
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
 
-    drawImage(x, y, width, height, texture, backgroundColorR, backgroundColorG, backgroundColorB, backgroundColorAlpha, borderColorR, borderColorG, borderColorB, borderColorAlpha, borderSize, borderType, opacity) {
+    drawImage(x, y, width, height, texture, backgroundColorR, backgroundColorG, backgroundColorB, backgroundColorAlpha, borderColorR, borderColorG, borderColorB, borderColorAlpha, borderSize, borderType, opacity) {        
         const gl = this.gl;
 
         gl.useProgram(this.imageProgram);

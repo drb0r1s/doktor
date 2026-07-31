@@ -35,6 +35,7 @@ pub struct Image {
     pub location: Location,
     pub width: f32,
     pub height: f32,
+    pub clip: Clip,
     pub source: String,
     pub background_color: RGB,
     pub border_color: RGB,
