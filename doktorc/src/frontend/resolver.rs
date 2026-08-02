@@ -324,9 +324,81 @@ impl Resolver {
                     true
                 }
 
+                "border_top_color" => {
+                    match Self::hex_to_rgb(&style.value) {
+                        Some(color) => system_styles.border_top_color = Some(color),
+                        None => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
+                "border_bottom_color" => {
+                    match Self::hex_to_rgb(&style.value) {
+                        Some(color) => system_styles.border_bottom_color = Some(color),
+                        None => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
+                "border_left_color" => {
+                    match Self::hex_to_rgb(&style.value) {
+                        Some(color) => system_styles.border_left_color = Some(color),
+                        None => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
+                "border_right_color" => {
+                    match Self::hex_to_rgb(&style.value) {
+                        Some(color) => system_styles.border_right_color = Some(color),
+                        None => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
                 "border_size" => {
                     match style.value.parse::<f32>() {
                         Ok(value) => system_styles.border_size = value,
+                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
+                "border_top_size" => {
+                    match style.value.parse::<f32>() {
+                        Ok(value) => system_styles.border_top_size = Some(value),
+                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
+                "border_bottom_size" => {
+                    match style.value.parse::<f32>() {
+                        Ok(value) => system_styles.border_bottom_size = Some(value),
+                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
+                "border_left_size" => {
+                    match style.value.parse::<f32>() {
+                        Ok(value) => system_styles.border_left_size = Some(value),
+                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    }
+
+                    true
+                }
+
+                "border_right_size" => {
+                    match style.value.parse::<f32>() {
+                        Ok(value) => system_styles.border_right_size = Some(value),
                         Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
                     }
 
@@ -339,6 +411,54 @@ impl Resolver {
                         "solid" => system_styles.border_type = BorderType::Solid,
                         "dashed" => system_styles.border_type = BorderType::Dashed,
                         "dotted" => system_styles.border_type = BorderType::Dotted,
+                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column)
+                    }
+
+                    true
+                }
+
+                "border_top_type" => {
+                    match style.value.as_str() {
+                        "none" => system_styles.border_top_type = Some(BorderType::None),
+                        "solid" => system_styles.border_top_type = Some(BorderType::Solid),
+                        "dashed" => system_styles.border_top_type = Some(BorderType::Dashed),
+                        "dotted" => system_styles.border_top_type = Some(BorderType::Dotted),
+                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column)
+                    }
+
+                    true
+                }
+
+                "border_bottom_type" => {
+                    match style.value.as_str() {
+                        "none" => system_styles.border_bottom_type = Some(BorderType::None),
+                        "solid" => system_styles.border_bottom_type = Some(BorderType::Solid),
+                        "dashed" => system_styles.border_bottom_type = Some(BorderType::Dashed),
+                        "dotted" => system_styles.border_bottom_type = Some(BorderType::Dotted),
+                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column)
+                    }
+
+                    true
+                }
+
+                "border_left_type" => {
+                    match style.value.as_str() {
+                        "none" => system_styles.border_left_type = Some(BorderType::None),
+                        "solid" => system_styles.border_left_type = Some(BorderType::Solid),
+                        "dashed" => system_styles.border_left_type = Some(BorderType::Dashed),
+                        "dotted" => system_styles.border_left_type = Some(BorderType::Dotted),
+                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column)
+                    }
+
+                    true
+                }
+
+                "border_right_type" => {
+                    match style.value.as_str() {
+                        "none" => system_styles.border_right_type = Some(BorderType::None),
+                        "solid" => system_styles.border_right_type = Some(BorderType::Solid),
+                        "dashed" => system_styles.border_right_type = Some(BorderType::Dashed),
+                        "dotted" => system_styles.border_right_type = Some(BorderType::Dotted),
                         _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column)
                     }
 

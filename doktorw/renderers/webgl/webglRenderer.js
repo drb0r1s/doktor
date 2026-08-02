@@ -66,11 +66,24 @@ export class WebglRenderer {
         this.rectangleLocalPositionLocation = gl.getAttribLocation(this.rectangleProgram, "a_localPosition");
         this.rectangleResolutionLocation = gl.getUniformLocation(this.rectangleProgram, "u_resolution");
         this.rectangleFillColorLocation = gl.getUniformLocation(this.rectangleProgram, "u_fillColor");
-        this.rectangleBorderColorLocation = gl.getUniformLocation(this.rectangleProgram, "u_borderColor");
-        this.rectangleBorderSizeLocation = gl.getUniformLocation(this.rectangleProgram, "u_borderSize");
-        this.rectangleBorderTypeLocation = gl.getUniformLocation(this.rectangleProgram, "u_borderType");
         this.rectangleRectSizeLocation = gl.getUniformLocation(this.rectangleProgram, "u_rectSize");
         this.rectangleOpacityLocation = gl.getUniformLocation(this.rectangleProgram, "u_opacity");
+
+        this.rectangleBorderTopColorLocation = gl.getUniformLocation(this.rectangleProgram, "u_borderTopColor");
+        this.rectangleBorderTopSizeLocation = gl.getUniformLocation(this.rectangleProgram, "u_borderTopSize");
+        this.rectangleBorderTopTypeLocation = gl.getUniformLocation(this.rectangleProgram, "u_borderTopType");
+
+        this.rectangleBorderBottomColorLocation = gl.getUniformLocation(this.rectangleProgram, "u_borderBottomColor");
+        this.rectangleBorderBottomSizeLocation = gl.getUniformLocation(this.rectangleProgram, "u_borderBottomSize");
+        this.rectangleBorderBottomTypeLocation = gl.getUniformLocation(this.rectangleProgram, "u_borderBottomType");
+
+        this.rectangleBorderLeftColorLocation = gl.getUniformLocation(this.rectangleProgram, "u_borderLeftColor");
+        this.rectangleBorderLeftSizeLocation = gl.getUniformLocation(this.rectangleProgram, "u_borderLeftSize");
+        this.rectangleBorderLeftTypeLocation = gl.getUniformLocation(this.rectangleProgram, "u_borderLeftType");
+
+        this.rectangleBorderRightColorLocation = gl.getUniformLocation(this.rectangleProgram, "u_borderRightColor");
+        this.rectangleBorderRightSizeLocation = gl.getUniformLocation(this.rectangleProgram, "u_borderRightSize");
+        this.rectangleBorderRightTypeLocation = gl.getUniformLocation(this.rectangleProgram, "u_borderRightType");
 
         // Image Program
         this.imageProgram = createProgram(gl, IMAGE_VERTEX_SHADER_SOURCE, IMAGE_FRAGMENT_SHADER_SOURCE);
@@ -80,10 +93,23 @@ export class WebglRenderer {
         this.imageOpacityLocation = gl.getUniformLocation(this.imageProgram, "u_opacity");
         this.imageLocalPositionLocation = gl.getAttribLocation(this.imageProgram, "a_localPosition");
         this.imageBackgroundColorLocation = gl.getUniformLocation(this.imageProgram, "u_backgroundColor");
-        this.imageBorderColorLocation = gl.getUniformLocation(this.imageProgram, "u_borderColor");
-        this.imageBorderSizeLocation = gl.getUniformLocation(this.imageProgram, "u_borderSize");
-        this.imageBorderTypeLocation = gl.getUniformLocation(this.imageProgram, "u_borderType");
         this.imageRectSizeLocation = gl.getUniformLocation(this.imageProgram, "u_rectSize");
+
+        this.imageBorderTopColorLocation = gl.getUniformLocation(this.imageProgram, "u_borderTopColor");
+        this.imageBorderTopSizeLocation = gl.getUniformLocation(this.imageProgram, "u_borderTopSize");
+        this.imageBorderTopTypeLocation = gl.getUniformLocation(this.imageProgram, "u_borderTopType");
+
+        this.imageBorderBottomColorLocation = gl.getUniformLocation(this.imageProgram, "u_borderBottomColor");
+        this.imageBorderBottomSizeLocation = gl.getUniformLocation(this.imageProgram, "u_borderBottomSize");
+        this.imageBorderBottomTypeLocation = gl.getUniformLocation(this.imageProgram, "u_borderBottomType");
+
+        this.imageBorderLeftColorLocation = gl.getUniformLocation(this.imageProgram, "u_borderLeftColor");
+        this.imageBorderLeftSizeLocation = gl.getUniformLocation(this.imageProgram, "u_borderLeftSize");
+        this.imageBorderLeftTypeLocation = gl.getUniformLocation(this.imageProgram, "u_borderLeftType");
+
+        this.imageBorderRightColorLocation = gl.getUniformLocation(this.imageProgram, "u_borderRightColor");
+        this.imageBorderRightSizeLocation = gl.getUniformLocation(this.imageProgram, "u_borderRightSize");
+        this.imageBorderRightTypeLocation = gl.getUniformLocation(this.imageProgram, "u_borderRightType");
 
         // Shared Position Buffer
         this.positionBuffer = gl.createBuffer();
@@ -163,16 +189,12 @@ export class WebglRenderer {
                 const backgroundColor = unpackColor(numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BACKGROUND_COLOR]);
                 const backgroundColorAlpha = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BACKGROUND_COLOR_ALPHA];
 
-                const borderColor = unpackColor(numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_COLOR]);
-                const borderColorAlpha = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_COLOR_ALPHA];
-
-                const borderSize = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_SIZE];
-                const borderType = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_TYPE];
+                const border = this.extractBorders(numericBuffer, rowStart);
 
                 const opacity = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_OPACITY];
 
                 this.applyScissor(clipXStart, clipXEnd, clipYStart, clipYEnd);
-                this.drawRectangle(x, y, width, height, backgroundColor.r / 255, backgroundColor.g / 255, backgroundColor.b / 255, backgroundColorAlpha / 255, borderColor.r / 255, borderColor.g / 255, borderColor.b / 255, borderColorAlpha / 255, borderSize, borderType, opacity);
+                this.drawRectangle(x, y, width, height, backgroundColor.r / 255, backgroundColor.g / 255, backgroundColor.b / 255, backgroundColorAlpha / 255, border, opacity);
             }
             
             else if(type === PACKET_STRUCTURE.PACKET_IMAGE_TYPE) {
@@ -198,31 +220,40 @@ export class WebglRenderer {
                 const backgroundColor = unpackColor(numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BACKGROUND_COLOR]);
                 const backgroundColorAlpha = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BACKGROUND_COLOR_ALPHA];
 
-                const borderColor = unpackColor(numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_COLOR]);
-                const borderColorAlpha = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_COLOR_ALPHA];
-
-                const borderSize = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_SIZE];
-                const borderType = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_TYPE];
+                const border = this.extractBorders(numericBuffer, rowStart);
 
                 const opacity = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_OPACITY];
 
                 this.applyScissor(clipXStart, clipXEnd, clipYStart, clipYEnd);
-                this.drawImage(x, y, width, height, texture, backgroundColor.r / 255, backgroundColor.g / 255, backgroundColor.b / 255, backgroundColorAlpha / 255, borderColor.r / 255, borderColor.g / 255, borderColor.b / 255, borderColorAlpha / 255, borderSize, borderType, opacity);
+                this.drawImage(x, y, width, height, texture, backgroundColor.r / 255, backgroundColor.g / 255, backgroundColor.b / 255, backgroundColorAlpha / 255, border, opacity);
             }
         }
     }
 
-    drawRectangle(x, y, width, height, backgroundColorR, backgroundColorG, backgroundColorB, backgroundColorAlpha, borderColorR, borderColorG, borderColorB, borderColorAlpha, borderSize, borderType, opacity) {
+    drawRectangle(x, y, width, height, backgroundColorR, backgroundColorG, backgroundColorB, backgroundColorAlpha, border, opacity) {
         const gl = this.gl;
 
         gl.useProgram(this.rectangleProgram);
         gl.uniform2f(this.rectangleResolutionLocation, this.canvas.width, this.canvas.height);
         gl.uniform2f(this.rectangleRectSizeLocation, width, height);
         gl.uniform4f(this.rectangleFillColorLocation, backgroundColorR, backgroundColorG, backgroundColorB, backgroundColorAlpha);
-        gl.uniform4f(this.rectangleBorderColorLocation, borderColorR, borderColorG, borderColorB, borderColorAlpha);
-        gl.uniform1f(this.rectangleBorderSizeLocation, borderSize);
-        gl.uniform1i(this.rectangleBorderTypeLocation, borderType);
         gl.uniform1f(this.rectangleOpacityLocation, opacity);
+
+        gl.uniform4f(this.rectangleBorderTopColorLocation, border.top.r, border.top.g, border.top.b, border.top.a);
+        gl.uniform1f(this.rectangleBorderTopSizeLocation, border.top.size);
+        gl.uniform1i(this.rectangleBorderTopTypeLocation, border.top.type);
+
+        gl.uniform4f(this.rectangleBorderBottomColorLocation, border.bottom.r, border.bottom.g, border.bottom.b, border.bottom.a);
+        gl.uniform1f(this.rectangleBorderBottomSizeLocation, border.bottom.size);
+        gl.uniform1i(this.rectangleBorderBottomTypeLocation, border.bottom.type);
+
+        gl.uniform4f(this.rectangleBorderLeftColorLocation, border.left.r, border.left.g, border.left.b, border.left.a);
+        gl.uniform1f(this.rectangleBorderLeftSizeLocation, border.left.size);
+        gl.uniform1i(this.rectangleBorderLeftTypeLocation, border.left.type);
+
+        gl.uniform4f(this.rectangleBorderRightColorLocation, border.right.r, border.right.g, border.right.b, border.right.a);
+        gl.uniform1f(this.rectangleBorderRightSizeLocation, border.right.size);
+        gl.uniform1i(this.rectangleBorderRightTypeLocation, border.right.type);
 
         const positions = new Float32Array([
             x, y,
@@ -255,17 +286,30 @@ export class WebglRenderer {
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
 
-    drawImage(x, y, width, height, texture, backgroundColorR, backgroundColorG, backgroundColorB, backgroundColorAlpha, borderColorR, borderColorG, borderColorB, borderColorAlpha, borderSize, borderType, opacity) {        
+    drawImage(x, y, width, height, texture, backgroundColorR, backgroundColorG, backgroundColorB, backgroundColorAlpha, border, opacity) {        
         const gl = this.gl;
 
         gl.useProgram(this.imageProgram);
         gl.uniform2f(this.imageResolutionLocation, this.canvas.width, this.canvas.height);
         gl.uniform2f(this.imageRectSizeLocation, width, height);
         gl.uniform4f(this.imageBackgroundColorLocation, backgroundColorR, backgroundColorG, backgroundColorB, backgroundColorAlpha);
-        gl.uniform4f(this.imageBorderColorLocation, borderColorR, borderColorG, borderColorB, borderColorAlpha);
-        gl.uniform1f(this.imageBorderSizeLocation, borderSize);
-        gl.uniform1i(this.imageBorderTypeLocation, borderType);
         gl.uniform1f(this.imageOpacityLocation, opacity);
+
+        gl.uniform4f(this.imageBorderTopColorLocation, border.top.r, border.top.g, border.top.b, border.top.a);
+        gl.uniform1f(this.imageBorderTopSizeLocation, border.top.size);
+        gl.uniform1i(this.imageBorderTopTypeLocation, border.top.type);
+
+        gl.uniform4f(this.imageBorderBottomColorLocation, border.bottom.r, border.bottom.g, border.bottom.b, border.bottom.a);
+        gl.uniform1f(this.imageBorderBottomSizeLocation, border.bottom.size);
+        gl.uniform1i(this.imageBorderBottomTypeLocation, border.bottom.type);
+
+        gl.uniform4f(this.imageBorderLeftColorLocation, border.left.r, border.left.g, border.left.b, border.left.a);
+        gl.uniform1f(this.imageBorderLeftSizeLocation, border.left.size);
+        gl.uniform1i(this.imageBorderLeftTypeLocation, border.left.type);
+
+        gl.uniform4f(this.imageBorderRightColorLocation, border.right.r, border.right.g, border.right.b, border.right.a);
+        gl.uniform1f(this.imageBorderRightSizeLocation, border.right.size);
+        gl.uniform1i(this.imageBorderRightTypeLocation, border.right.type);
 
         const positions = new Float32Array([
             x, y,
@@ -313,6 +357,29 @@ export class WebglRenderer {
         gl.bindTexture(gl.TEXTURE_2D, texture);
 
         gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
+
+    extractBorders(numericBuffer, rowStart) {
+        const build = (colorField, colorAlphaField, sizeField, typeField) => {
+            const color = unpackColor(numericBuffer[rowStart + colorField]);
+            const colorAlpha = numericBuffer[rowStart + colorAlphaField];
+
+            return {
+                r: color.r / 255,
+                g: color.g / 255,
+                b: color.b / 255,
+                a: colorAlpha / 255,
+                size: numericBuffer[rowStart + sizeField],
+                type: numericBuffer[rowStart + typeField],
+            };
+        };
+
+        return {
+            top: build(PACKET_STRUCTURE.PACKET_BORDER_TOP_COLOR, PACKET_STRUCTURE.PACKET_BORDER_TOP_COLOR_ALPHA, PACKET_STRUCTURE.PACKET_BORDER_TOP_SIZE, PACKET_STRUCTURE.PACKET_BORDER_TOP_TYPE),
+            bottom: build(PACKET_STRUCTURE.PACKET_BORDER_BOTTOM_COLOR, PACKET_STRUCTURE.PACKET_BORDER_BOTTOM_COLOR_ALPHA, PACKET_STRUCTURE.PACKET_BORDER_BOTTOM_SIZE, PACKET_STRUCTURE.PACKET_BORDER_BOTTOM_TYPE),
+            left: build(PACKET_STRUCTURE.PACKET_BORDER_LEFT_COLOR, PACKET_STRUCTURE.PACKET_BORDER_LEFT_COLOR_ALPHA, PACKET_STRUCTURE.PACKET_BORDER_LEFT_SIZE, PACKET_STRUCTURE.PACKET_BORDER_LEFT_TYPE),
+            right: build(PACKET_STRUCTURE.PACKET_BORDER_RIGHT_COLOR, PACKET_STRUCTURE.PACKET_BORDER_RIGHT_COLOR_ALPHA, PACKET_STRUCTURE.PACKET_BORDER_RIGHT_SIZE, PACKET_STRUCTURE.PACKET_BORDER_RIGHT_TYPE),
+        };
     }
 
     applyScissor(clipXStart, clipXEnd, clipYStart, clipYEnd) {

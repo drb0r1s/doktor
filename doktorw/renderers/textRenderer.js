@@ -45,11 +45,25 @@ export class TextRenderer {
 
             context.font = `${contentSize}px ${contentFont}`;
 
-            const borderColor = unpackColor(numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_COLOR]);
-            const borderColorAlpha = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_COLOR_ALPHA];
+            const borderTopColor = unpackColor(numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_TOP_COLOR]);
+            const borderTopColorAlpha = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_TOP_COLOR_ALPHA];
+            const borderTopSize = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_TOP_SIZE];
+            const borderTopType = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_TOP_TYPE];
 
-            const borderSize = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_SIZE];
-            const borderType = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_TYPE];
+            const borderBottomColor = unpackColor(numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_BOTTOM_COLOR]);
+            const borderBottomColorAlpha = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_BOTTOM_COLOR_ALPHA];
+            const borderBottomSize = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_BOTTOM_SIZE];
+            const borderBottomType = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_BOTTOM_TYPE];
+
+            const borderLeftColor = unpackColor(numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_LEFT_COLOR]);
+            const borderLeftColorAlpha = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_LEFT_COLOR_ALPHA];
+            const borderLeftSize = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_LEFT_SIZE];
+            const borderLeftType = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_LEFT_TYPE];
+
+            const borderRightColor = unpackColor(numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_RIGHT_COLOR]);
+            const borderRightColorAlpha = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_RIGHT_COLOR_ALPHA];
+            const borderRightSize = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_RIGHT_SIZE];
+            const borderRightType = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_BORDER_RIGHT_TYPE];
 
             const opacity = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_OPACITY];
 
@@ -70,16 +84,10 @@ export class TextRenderer {
             context.fillStyle = `rgba(${backgroundColor.r}, ${backgroundColor.g}, ${backgroundColor.b}, ${backgroundColorAlpha / 255})`;
             context.fillRect(x, y, textWidth, textHeight);
 
-            if(borderSize > 0) {
-                context.strokeStyle = `rgba(${borderColor.r}, ${borderColor.g}, ${borderColor.b}, ${borderColorAlpha / 255})`;
-                context.lineWidth = borderSize;
-
-                if(borderType === BORDER_TYPES.DASHED) context.setLineDash([12, 8]);
-                else if (borderType === BORDER_TYPES.DOTTED) context.setLineDash([2, 4]);
-                else context.setLineDash([]);
-
-                context.strokeRect(x + borderSize / 2, y + borderSize / 2, textWidth - borderSize, textHeight - borderSize);
-            }
+            this.drawBorder(x, y, textWidth, 0, borderTopColor, borderTopColorAlpha, borderTopSize, borderTopType);
+            this.drawBorder(x, y + textHeight, textWidth, 0, borderBottomColor, borderBottomColorAlpha, borderBottomSize, borderBottomType, true);
+            this.drawBorder(x, y, 0, textHeight, borderLeftColor, borderLeftColorAlpha, borderLeftSize, borderLeftType);
+            this.drawBorder(x + textWidth, y, 0, textHeight, borderRightColor, borderRightColorAlpha, borderRightSize, borderRightType);
 
             context.fillStyle = `rgba(${contentColor.r}, ${contentColor.g}, ${contentColor.b}, ${contentColorAlpha / 255})`;
             context.fillText(content, x, y);
@@ -87,5 +95,23 @@ export class TextRenderer {
             context.globalAlpha = 1.0;
             context.restore();
         }
+    }
+
+    drawBorder(startX, startY, endX, endY, color, colorAlpha, size, type) {
+        if(size <= 0) return;
+
+        const context = this.context;
+
+        context.strokeStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${colorAlpha / 255})`;
+        context.lineWidth = size;
+
+        if(type === BORDER_TYPES.DASHED) context.setLineDash([12, 8]);
+        else if(type === BORDER_TYPES.DOTTED) context.setLineDash([2, 4]);
+        else context.setLineDash([]);
+
+        context.beginPath();
+        context.moveTo(startX, startY);
+        context.lineTo(startX + endX, startY + endY);
+        context.stroke();
     }
 }

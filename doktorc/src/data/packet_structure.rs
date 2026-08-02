@@ -1,4 +1,4 @@
-pub const PACKET_SIZE: usize = 22;
+pub const PACKET_SIZE: usize = 34;
 
 pub const PACKET_TYPE: usize = 0;
 
@@ -24,12 +24,27 @@ pub const PACKET_CONTENT_COLOR_ALPHA: usize = 14;
 pub const PACKET_CONTENT_SIZE: usize = 15;
 pub const PACKET_CONTENT_FONT: usize = 16;
 
-pub const PACKET_BORDER_COLOR: usize = 17;
-pub const PACKET_BORDER_COLOR_ALPHA: usize = 18;
-pub const PACKET_BORDER_SIZE: usize = 19;
-pub const PACKET_BORDER_TYPE: usize = 20;
+pub const PACKET_BORDER_TOP_COLOR: usize = 17;
+pub const PACKET_BORDER_TOP_COLOR_ALPHA: usize = 18;
+pub const PACKET_BORDER_TOP_SIZE: usize = 19;
+pub const PACKET_BORDER_TOP_TYPE: usize = 20;
 
-pub const PACKET_OPACITY: usize = 21;
+pub const PACKET_BORDER_BOTTOM_COLOR: usize = 21;
+pub const PACKET_BORDER_BOTTOM_COLOR_ALPHA: usize = 22;
+pub const PACKET_BORDER_BOTTOM_SIZE: usize = 23;
+pub const PACKET_BORDER_BOTTOM_TYPE: usize = 24;
+
+pub const PACKET_BORDER_LEFT_COLOR: usize = 25;
+pub const PACKET_BORDER_LEFT_COLOR_ALPHA: usize = 26;
+pub const PACKET_BORDER_LEFT_SIZE: usize = 27;
+pub const PACKET_BORDER_LEFT_TYPE: usize = 28;
+
+pub const PACKET_BORDER_RIGHT_COLOR: usize = 29;
+pub const PACKET_BORDER_RIGHT_COLOR_ALPHA: usize = 30;
+pub const PACKET_BORDER_RIGHT_SIZE: usize = 31;
+pub const PACKET_BORDER_RIGHT_TYPE: usize = 32;
+
+pub const PACKET_OPACITY: usize = 33;
 
 pub const PACKET_RECTANGLE_TYPE: f32 = 0.0;
 pub const PACKET_TEXT_TYPE: f32 = 1.0;

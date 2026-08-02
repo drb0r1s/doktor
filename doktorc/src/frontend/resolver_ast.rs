@@ -117,8 +117,20 @@ pub struct SystemStyles {
     pub content_font: Font,
     pub background_color: RGB,
     pub border_color: RGB,
+    pub border_top_color: Option<RGB>,
+    pub border_bottom_color: Option<RGB>,
+    pub border_left_color: Option<RGB>,
+    pub border_right_color: Option<RGB>,
     pub border_size: f32,
+    pub border_top_size: Option<f32>,
+    pub border_bottom_size: Option<f32>,
+    pub border_left_size: Option<f32>,
+    pub border_right_size: Option<f32>,
     pub border_type: BorderType,
+    pub border_top_type: Option<BorderType>,
+    pub border_bottom_type: Option<BorderType>,
+    pub border_left_type: Option<BorderType>,
+    pub border_right_type: Option<BorderType>,
     pub opacity: f32,
     pub spacing: f32,
     pub spacing_top: Option<f32>,
@@ -161,8 +173,20 @@ impl SystemStyles {
             content_font: default_values::DEFAULT_CONTENT_FONT,
             background_color: if is_text { default_values::DEFAULT_TEXT_BACKGROUND_COLOR } else { default_values::DEFAULT_BACKGROUND_COLOR },
             border_color: default_values::DEFAULT_BORDER_COLOR,
+            border_top_color: None,
+            border_bottom_color: None,
+            border_left_color: None,
+            border_right_color: None,
             border_size: default_values::DEFAULT_BORDER_SIZE,
+            border_top_size: None,
+            border_bottom_size: None,
+            border_left_size: None,
+            border_right_size: None,
             border_type: default_values::DEFAULT_BORDER_TYPE,
+            border_top_type: None,
+            border_bottom_type: None,
+            border_left_type: None,
+            border_right_type: None,
             opacity: default_values::DEFAULT_OPACITY,
             spacing: default_values::DEFAULT_SPACING,
             spacing_top: None,
@@ -209,10 +233,39 @@ impl SystemStyles {
         }
     }
 
+    pub fn get_unambiguous_border_color(&self, border_color_type: &str) -> RGB {
+        match border_color_type {
+            "top" => self.border_top_color.or(Some(self.border_color)).unwrap_or(default_values::DEFAULT_BORDER_COLOR),
+            "bottom" => self.border_bottom_color.or(Some(self.border_color)).unwrap_or(default_values::DEFAULT_BORDER_COLOR),
+            "left" => self.border_left_color.or(Some(self.border_color)).unwrap_or(default_values::DEFAULT_BORDER_COLOR),
+            "right" => self.border_right_color.or(Some(self.border_color)).unwrap_or(default_values::DEFAULT_BORDER_COLOR),
+            _ => default_values::DEFAULT_BORDER_COLOR,
+        }
+    }
+
+    pub fn get_unambiguous_border_size(&self, border_size_type: &str) -> f32 {
+        match border_size_type {
+            "top" => self.border_top_size.or(Some(self.border_size)).unwrap_or(default_values::DEFAULT_BORDER_SIZE),
+            "bottom" => self.border_bottom_size.or(Some(self.border_size)).unwrap_or(default_values::DEFAULT_BORDER_SIZE),
+            "left" => self.border_left_size.or(Some(self.border_size)).unwrap_or(default_values::DEFAULT_BORDER_SIZE),
+            "right" => self.border_right_size.or(Some(self.border_size)).unwrap_or(default_values::DEFAULT_BORDER_SIZE),
+            _ => default_values::DEFAULT_BORDER_SIZE,
+        }
+    }
+
+    pub fn get_unambiguous_border_type(&self, border_type_type: &str) -> BorderType {
+        match border_type_type {
+            "top" => self.border_top_type.or(Some(self.border_type)).unwrap_or(default_values::DEFAULT_BORDER_TYPE),
+            "bottom" => self.border_bottom_type.or(Some(self.border_type)).unwrap_or(default_values::DEFAULT_BORDER_TYPE),
+            "left" => self.border_left_type.or(Some(self.border_type)).unwrap_or(default_values::DEFAULT_BORDER_TYPE),
+            "right" => self.border_right_type.or(Some(self.border_type)).unwrap_or(default_values::DEFAULT_BORDER_TYPE),
+            _ => default_values::DEFAULT_BORDER_TYPE,
+        }
+    }
+
     pub fn get_unambiguous_spacing(&self, spacing_type: &str, orientation: &str) -> f32 {
         match spacing_type {
             "margin" => match orientation {
-                "all" => self.margin.or(Some(self.spacing)).unwrap_or(default_values::DEFAULT_SPACING),
                 "top" => self.margin_top.or(self.margin).or(self.spacing_top).or(Some(self.spacing)).unwrap_or(default_values::DEFAULT_SPACING),
                 "bottom" => self.margin_bottom.or(self.margin).or(self.spacing_bottom).or(Some(self.spacing)).unwrap_or(default_values::DEFAULT_SPACING),
                 "left" => self.margin_left.or(self.margin).or(self.spacing_left).or(Some(self.spacing)).unwrap_or(default_values::DEFAULT_SPACING),
@@ -221,7 +274,6 @@ impl SystemStyles {
             },
 
             "padding" => match orientation {
-                "all" => self.padding.or(Some(self.spacing)).unwrap_or(default_values::DEFAULT_SPACING),
                 "top" => self.padding_top.or(self.padding).or(self.spacing_top).or(Some(self.spacing)).unwrap_or(default_values::DEFAULT_SPACING),
                 "bottom" => self.padding_bottom.or(self.padding).or(self.spacing_bottom).or(Some(self.spacing)).unwrap_or(default_values::DEFAULT_SPACING),
                 "left" => self.padding_left.or(self.padding).or(self.spacing_left).or(Some(self.spacing)).unwrap_or(default_values::DEFAULT_SPACING),

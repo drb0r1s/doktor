@@ -39,20 +39,41 @@ impl Packer {
 
     fn pack_rectangle(rectangle: &Rectangle, row: &mut [f32]) {
         row[packet_structure::PACKET_TYPE] = packet_structure::PACKET_RECTANGLE_TYPE;
+
         row[packet_structure::PACKET_X] = rectangle.location.x;
         row[packet_structure::PACKET_Y] = rectangle.location.y;
+
         row[packet_structure::PACKET_WIDTH] = rectangle.width;
         row[packet_structure::PACKET_HEIGHT] = rectangle.height;
+
         row[packet_structure::PACKET_CLIP_X_START] = rectangle.clip.x.0;
         row[packet_structure::PACKET_CLIP_X_END] = rectangle.clip.x.1;
         row[packet_structure::PACKET_CLIP_Y_START] = rectangle.clip.y.0;
         row[packet_structure::PACKET_CLIP_Y_END] = rectangle.clip.y.1;
+
         row[packet_structure::PACKET_BACKGROUND_COLOR] = Self::pack_color(rectangle.background_color);
         row[packet_structure::PACKET_BACKGROUND_COLOR_ALPHA] = rectangle.background_color.a as f32;
-        row[packet_structure::PACKET_BORDER_COLOR] = Self::pack_color(rectangle.border_color);
-        row[packet_structure::PACKET_BORDER_COLOR_ALPHA] = rectangle.border_color.a as f32;
-        row[packet_structure::PACKET_BORDER_SIZE] = rectangle.border_size;
-        row[packet_structure::PACKET_BORDER_TYPE] = rectangle.border_type as u32 as f32;
+
+        row[packet_structure::PACKET_BORDER_TOP_COLOR] = Self::pack_color(rectangle.border_top_color);
+        row[packet_structure::PACKET_BORDER_TOP_COLOR_ALPHA] = rectangle.border_top_color.a as f32;
+        row[packet_structure::PACKET_BORDER_TOP_SIZE] = rectangle.border_top_size;
+        row[packet_structure::PACKET_BORDER_TOP_TYPE] = rectangle.border_top_type as u32 as f32;
+
+        row[packet_structure::PACKET_BORDER_BOTTOM_COLOR] = Self::pack_color(rectangle.border_bottom_color);
+        row[packet_structure::PACKET_BORDER_BOTTOM_COLOR_ALPHA] = rectangle.border_bottom_color.a as f32;
+        row[packet_structure::PACKET_BORDER_BOTTOM_SIZE] = rectangle.border_bottom_size;
+        row[packet_structure::PACKET_BORDER_BOTTOM_TYPE] = rectangle.border_bottom_type as u32 as f32;
+        
+        row[packet_structure::PACKET_BORDER_LEFT_COLOR] = Self::pack_color(rectangle.border_left_color);
+        row[packet_structure::PACKET_BORDER_LEFT_COLOR_ALPHA] = rectangle.border_left_color.a as f32;
+        row[packet_structure::PACKET_BORDER_LEFT_SIZE] = rectangle.border_left_size;
+        row[packet_structure::PACKET_BORDER_LEFT_TYPE] = rectangle.border_left_type as u32 as f32;
+
+        row[packet_structure::PACKET_BORDER_RIGHT_COLOR] = Self::pack_color(rectangle.border_right_color);
+        row[packet_structure::PACKET_BORDER_RIGHT_COLOR_ALPHA] = rectangle.border_right_color.a as f32;
+        row[packet_structure::PACKET_BORDER_RIGHT_SIZE] = rectangle.border_right_size;
+        row[packet_structure::PACKET_BORDER_RIGHT_TYPE] = rectangle.border_right_type as u32 as f32;
+
         row[packet_structure::PACKET_OPACITY] = rectangle.opacity;
     }
 
@@ -60,24 +81,46 @@ impl Packer {
         let (offset, length): (usize, usize) = Self::push_string(string_table, &text.content);
 
         row[packet_structure::PACKET_TYPE] = packet_structure::PACKET_TEXT_TYPE;
+
         row[packet_structure::PACKET_X] = text.location.x;
         row[packet_structure::PACKET_Y] = text.location.y;
+
         row[packet_structure::PACKET_CLIP_X_START] = text.clip.x.0;
         row[packet_structure::PACKET_CLIP_X_END] = text.clip.x.1;
         row[packet_structure::PACKET_CLIP_Y_START] = text.clip.y.0;
         row[packet_structure::PACKET_CLIP_Y_END] = text.clip.y.1;
+
         row[packet_structure::PACKET_BACKGROUND_COLOR] = Self::pack_color(text.background_color);
         row[packet_structure::PACKET_BACKGROUND_COLOR_ALPHA] = text.background_color.a as f32;
+
         row[packet_structure::PACKET_STRING_OFFSET] = offset as f32;
         row[packet_structure::PACKET_STRING_LENGTH] = length as f32;
+
         row[packet_structure::PACKET_CONTENT_COLOR] = Self::pack_color(text.content_color);
         row[packet_structure::PACKET_CONTENT_COLOR_ALPHA] = text.content_color.a as f32;
         row[packet_structure::PACKET_CONTENT_SIZE] = text.content_size;
         row[packet_structure::PACKET_CONTENT_FONT] = text.content_font as u32 as f32;
-        row[packet_structure::PACKET_BORDER_COLOR] = Self::pack_color(text.border_color);
-        row[packet_structure::PACKET_BORDER_COLOR_ALPHA] = text.border_color.a as f32;
-        row[packet_structure::PACKET_BORDER_SIZE] = text.border_size;
-        row[packet_structure::PACKET_BORDER_TYPE] = text.border_type as u32 as f32;
+
+        row[packet_structure::PACKET_BORDER_TOP_COLOR] = Self::pack_color(text.border_top_color);
+        row[packet_structure::PACKET_BORDER_TOP_COLOR_ALPHA] = text.border_top_color.a as f32;
+        row[packet_structure::PACKET_BORDER_TOP_SIZE] = text.border_top_size;
+        row[packet_structure::PACKET_BORDER_TOP_TYPE] = text.border_top_type as u32 as f32;
+
+        row[packet_structure::PACKET_BORDER_BOTTOM_COLOR] = Self::pack_color(text.border_bottom_color);
+        row[packet_structure::PACKET_BORDER_BOTTOM_COLOR_ALPHA] = text.border_bottom_color.a as f32;
+        row[packet_structure::PACKET_BORDER_BOTTOM_SIZE] = text.border_bottom_size;
+        row[packet_structure::PACKET_BORDER_BOTTOM_TYPE] = text.border_bottom_type as u32 as f32;
+        
+        row[packet_structure::PACKET_BORDER_LEFT_COLOR] = Self::pack_color(text.border_left_color);
+        row[packet_structure::PACKET_BORDER_LEFT_COLOR_ALPHA] = text.border_left_color.a as f32;
+        row[packet_structure::PACKET_BORDER_LEFT_SIZE] = text.border_left_size;
+        row[packet_structure::PACKET_BORDER_LEFT_TYPE] = text.border_left_type as u32 as f32;
+
+        row[packet_structure::PACKET_BORDER_RIGHT_COLOR] = Self::pack_color(text.border_right_color);
+        row[packet_structure::PACKET_BORDER_RIGHT_COLOR_ALPHA] = text.border_right_color.a as f32;
+        row[packet_structure::PACKET_BORDER_RIGHT_SIZE] = text.border_right_size;
+        row[packet_structure::PACKET_BORDER_RIGHT_TYPE] = text.border_right_type as u32 as f32;
+
         row[packet_structure::PACKET_OPACITY] = text.opacity;
     }
 
@@ -85,22 +128,44 @@ impl Packer {
         let (offset, length): (usize, usize) = Self::push_string(string_table, &image.source);
 
         row[packet_structure::PACKET_TYPE] = packet_structure::PACKET_IMAGE_TYPE;
+
         row[packet_structure::PACKET_X] = image.location.x;
         row[packet_structure::PACKET_Y] = image.location.y;
+
         row[packet_structure::PACKET_WIDTH] = image.width;
         row[packet_structure::PACKET_HEIGHT] = image.height;
+
         row[packet_structure::PACKET_CLIP_X_START] = image.clip.x.0;
         row[packet_structure::PACKET_CLIP_X_END] = image.clip.x.1;
         row[packet_structure::PACKET_CLIP_Y_START] = image.clip.y.0;
         row[packet_structure::PACKET_CLIP_Y_END] = image.clip.y.1;
+
         row[packet_structure::PACKET_BACKGROUND_COLOR] = Self::pack_color(image.background_color);
         row[packet_structure::PACKET_BACKGROUND_COLOR_ALPHA] = image.background_color.a as f32;
+
         row[packet_structure::PACKET_STRING_OFFSET] = offset as f32;
         row[packet_structure::PACKET_STRING_LENGTH] = length as f32;
-        row[packet_structure::PACKET_BORDER_COLOR] = Self::pack_color(image.border_color);
-        row[packet_structure::PACKET_BORDER_COLOR_ALPHA] = image.border_color.a as f32;
-        row[packet_structure::PACKET_BORDER_SIZE] = image.border_size;
-        row[packet_structure::PACKET_BORDER_TYPE] = image.border_type as u32 as f32;
+        
+        row[packet_structure::PACKET_BORDER_TOP_COLOR] = Self::pack_color(image.border_top_color);
+        row[packet_structure::PACKET_BORDER_TOP_COLOR_ALPHA] = image.border_top_color.a as f32;
+        row[packet_structure::PACKET_BORDER_TOP_SIZE] = image.border_top_size;
+        row[packet_structure::PACKET_BORDER_TOP_TYPE] = image.border_top_type as u32 as f32;
+
+        row[packet_structure::PACKET_BORDER_BOTTOM_COLOR] = Self::pack_color(image.border_bottom_color);
+        row[packet_structure::PACKET_BORDER_BOTTOM_COLOR_ALPHA] = image.border_bottom_color.a as f32;
+        row[packet_structure::PACKET_BORDER_BOTTOM_SIZE] = image.border_bottom_size;
+        row[packet_structure::PACKET_BORDER_BOTTOM_TYPE] = image.border_bottom_type as u32 as f32;
+        
+        row[packet_structure::PACKET_BORDER_LEFT_COLOR] = Self::pack_color(image.border_left_color);
+        row[packet_structure::PACKET_BORDER_LEFT_COLOR_ALPHA] = image.border_left_color.a as f32;
+        row[packet_structure::PACKET_BORDER_LEFT_SIZE] = image.border_left_size;
+        row[packet_structure::PACKET_BORDER_LEFT_TYPE] = image.border_left_type as u32 as f32;
+
+        row[packet_structure::PACKET_BORDER_RIGHT_COLOR] = Self::pack_color(image.border_right_color);
+        row[packet_structure::PACKET_BORDER_RIGHT_COLOR_ALPHA] = image.border_right_color.a as f32;
+        row[packet_structure::PACKET_BORDER_RIGHT_SIZE] = image.border_right_size;
+        row[packet_structure::PACKET_BORDER_RIGHT_TYPE] = image.border_right_type as u32 as f32;
+
         row[packet_structure::PACKET_OPACITY] = image.opacity;
     }
 
