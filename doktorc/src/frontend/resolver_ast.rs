@@ -105,7 +105,9 @@ pub struct SystemStyles {
     pub alignment_x: Option<Alignment>,
     pub alignment_y: Option<Alignment>,
     pub width: f32,
+    pub width_percent: Option<f32>, // Cannot be directly updated by a user.
     pub height: f32,
+    pub height_percent: Option<f32>, // Cannot be directly updated by a user.
     pub lock_dimensions: bool,
     pub lock_width: Option<bool>,
     pub lock_height: Option<bool>,
@@ -161,7 +163,9 @@ impl SystemStyles {
             alignment_x: None,
             alignment_y: None,
             width: default_values::DEFAULT_WIDTH,
+            width_percent: None,
             height: default_values::DEFAULT_HEIGHT,
+            height_percent: None,
             position: default_values::DEFAULT_POSITION,
             lock_dimensions: default_values::DEFAULT_LOCK_DIMENSIONS,
             lock_width: None,

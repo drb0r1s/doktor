@@ -207,7 +207,7 @@ impl Shaper {
                     y: inset_location.y + position_y,
                 };
 
-                self.get_shaper_block_node(child, location, parent_clip, parent_styles.opacity)
+                self.get_shaper_block_node(child, location, parent_size, parent_clip, parent_styles.opacity)
             }).collect()
         }
     }
@@ -325,7 +325,7 @@ impl Shaper {
                     },
                 };
 
-                result.push(self.get_shaper_block_node(child, location, parent_clip.clone(), parent_styles.opacity));
+                result.push(self.get_shaper_block_node(child, location, parent_size, parent_clip.clone(), parent_styles.opacity));
                 breakable_cursor += breakable_size;
             }
 
@@ -357,27 +357,27 @@ impl Shaper {
         (inset_location, inset_size)
     }
 
-    fn get_shaper_block_node(&self, sized_resolver_block_node: &SizedResolverBlockNode, location: Location, inherited_clip: Clip, inherited_opacity: f32) -> ShaperBlockNode {
-        let mut system_styles = sized_resolver_block_node.resolver_block_node.system_styles.clone();
+    fn get_shaper_block_node(&self, sized_resolver_block_node: &SizedResolverBlockNode, parent_location: Location, parent_size: Size, inherited_clip: Clip, inherited_opacity: f32) -> ShaperBlockNode {
+        let mut system_styles: SystemStyles = sized_resolver_block_node.resolver_block_node.system_styles.clone();
         system_styles.opacity *= inherited_opacity;
 
-        let size = sized_resolver_block_node.size;
+        let actual_size: Size = Self::calculate_actual_size(&mut system_styles, parent_size);
 
         let clip: Clip = Clip {
             x: if system_styles.get_unambiguous_overflow("x") == Overflow::False {
-                intersect_range(inherited_clip.x, (location.x, location.x + size.width))
+                intersect_range(inherited_clip.x, (parent_location.x, parent_location.x + actual_size.width))
             } else {
                 inherited_clip.x
             },
 
             y: if system_styles.get_unambiguous_overflow("y") == Overflow::False {
-                intersect_range(inherited_clip.y, (location.y, location.y + size.height))
+                intersect_range(inherited_clip.y, (parent_location.y, parent_location.y + actual_size.height))
             } else {
                 inherited_clip.y
             },
         };
 
-        let children: Vec<ShaperBlockNode> = self.locate_children(&sized_resolver_block_node.children, &system_styles, location, sized_resolver_block_node.size, clip.clone());
+        let children: Vec<ShaperBlockNode> = self.locate_children(&sized_resolver_block_node.children, &system_styles, parent_location, sized_resolver_block_node.size, clip.clone());
 
         ShaperBlockNode {
             block_type: sized_resolver_block_node.resolver_block_node.block_type.clone(),
@@ -386,8 +386,8 @@ impl Shaper {
             arbitrary_attributes: sized_resolver_block_node.resolver_block_node.arbitrary_attributes.clone(),
             system_styles,
             arbitrary_styles: sized_resolver_block_node.resolver_block_node.arbitrary_styles.clone(),
-            size: sized_resolver_block_node.size,
-            location,
+            size: actual_size,
+            location: parent_location,
             clip,
             children,
             line: sized_resolver_block_node.resolver_block_node.line,
@@ -400,6 +400,19 @@ impl Shaper {
             Direction::Horizontal => location.x,
             Direction::Vertical => location.y,
         }
+    }
+
+    // Actual size is the height/width of a block after checking if height/width_percent is defined.
+    fn calculate_actual_size(styles: &mut SystemStyles, parent_size: Size) -> Size {
+        if let Some(percentage) = styles.width_percent {
+            styles.width = parent_size.width * percentage;
+        }
+
+        if let Some(percentage) = styles.height_percent {
+            styles.height = parent_size.height * percentage;
+        }
+
+        Size { width: styles.width, height: styles.height }
     }
 
     fn get_breakable_margin(styles: &SystemStyles, direction: Direction) -> (f32, f32) {

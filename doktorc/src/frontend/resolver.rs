@@ -205,18 +205,40 @@ impl Resolver {
                 }
                 
                 "width" => {
-                    match style.value.parse::<f32>() {
-                        Ok(value) => system_styles.width = value,
-                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    if let Some(stripped) = style.value.strip_suffix('%') {
+                        match stripped.parse::<f32>() {
+                            Ok(value) => {
+                                system_styles.width = 0.0; // Placeholder.
+                                system_styles.width_percent = Some(value / 100.0)
+                            },
+                            
+                            Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        }
+                    } else {
+                        match style.value.parse::<f32>() {
+                            Ok(value) => system_styles.width = value,
+                            Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        }
                     }
 
                     true
                 }
 
                 "height" => {
-                    match style.value.parse::<f32>() {
-                        Ok(value) => system_styles.height = value,
-                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                    if let Some(stripped) = style.value.strip_suffix('%') {
+                        match stripped.parse::<f32>() {
+                            Ok(value) => {
+                                system_styles.height = 0.0; // Placeholder.
+                                system_styles.height_percent = Some(value / 100.0)
+                            },
+
+                            Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        }
+                    } else {
+                        match style.value.parse::<f32>() {
+                            Ok(value) => system_styles.height = value,
+                            Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        }
                     }
 
                     true
