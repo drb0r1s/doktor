@@ -25,13 +25,24 @@ impl Shaper {
         // Pass 1: bottom-up sizing.
         let mut path: Vec<usize> = Vec::new();
 
-        let sized_children: Vec<SizedResolverBlockNode> = resolver_doktor_node.children.into_iter().enumerate().map(|(index, resolver_block_node)| {
+        let mut sized_children: Vec<SizedResolverBlockNode> = resolver_doktor_node.children.into_iter().enumerate().map(|(index, resolver_block_node)| {
             path.push(index);
             let sized = self.size_block(resolver_block_node, text_measurements, image_measurements, &mut path);
             path.pop();
 
             sized
         }).collect();
+
+        // Pass 1.5: top-down percentage dimensions resolution.
+
+        let viewport_size: Size = Size {
+            width: self.viewport_width,
+            height: self.viewport_height,
+        };
+
+        for child in &mut sized_children {
+            Self::resolve_dimension_percentages(child, viewport_size);
+        }
 
         // Pass 2: top-down location defining.
         // Setting default layout properties for the doktor node (root).
@@ -42,10 +53,7 @@ impl Shaper {
             &sized_children,
             &resolver_doktor_node_system_styles,
             Location { x: 0.0, y: 0.0 },
-            Size {
-                width: self.viewport_width,
-                height: self.viewport_height,
-            },
+            viewport_size,
             Clip {
                 x: (0.0, self.viewport_width),
                 y: (0.0, self.viewport_height),
@@ -185,6 +193,41 @@ impl Shaper {
             resolver_block_node: block,
             size,
             children: sized_children,
+        }
+    }
+
+    // Pass 1.5: top-down percentage dimensions resolution.
+
+    fn resolve_dimension_percentages(block: &mut SizedResolverBlockNode, parent_size: Size) {
+        if let Some(percentage) = block.resolver_block_node.system_styles.width_percent {
+            block.size.width = parent_size.width * percentage;
+        }
+
+        if let Some(percentage) = block.resolver_block_node.system_styles.height_percent {
+            block.size.height = parent_size.height * percentage;
+        }
+
+        let inset_size: Size = Self::get_inset_size(&block.resolver_block_node.system_styles, block.size);
+
+        for child in &mut block.children {
+            Self::resolve_dimension_percentages(child, inset_size);
+        }
+    }
+
+    fn get_inset_size(styles: &SystemStyles, total_size: Size) -> Size {
+        let padding_top: f32 = styles.get_unambiguous_spacing("padding", "top");
+        let padding_bottom: f32 = styles.get_unambiguous_spacing("padding", "bottom");
+        let padding_left: f32 = styles.get_unambiguous_spacing("padding", "left");
+        let padding_right: f32 = styles.get_unambiguous_spacing("padding", "right");
+
+        let border_top: f32 = styles.get_unambiguous_border_size("top");
+        let border_bottom: f32 = styles.get_unambiguous_border_size("bottom");
+        let border_left: f32 = styles.get_unambiguous_border_size("left");
+        let border_right: f32 = styles.get_unambiguous_border_size("right");
+
+        Size {
+            width: (total_size.width - padding_left - padding_right - border_left - border_right).max(0.0),
+            height: (total_size.height - padding_top - padding_bottom - border_top - border_bottom).max(0.0),
         }
     }
 
@@ -342,16 +385,19 @@ impl Shaper {
         let padding_left: f32 = parent_styles.get_unambiguous_spacing("padding", "left");
         let padding_right: f32 = parent_styles.get_unambiguous_spacing("padding", "right");
 
-        let border_size: f32 = parent_styles.border_size;
+        let border_top: f32 = parent_styles.get_unambiguous_border_size("top");
+        let border_bottom: f32 = parent_styles.get_unambiguous_border_size("bottom");
+        let border_left: f32 = parent_styles.get_unambiguous_border_size("left");
+        let border_right: f32 = parent_styles.get_unambiguous_border_size("right");
 
         let inset_location = Location {
-            x: parent_location.x + padding_left + border_size,
-            y: parent_location.y + padding_top + border_size,
+            x: parent_location.x + padding_left + border_left,
+            y: parent_location.y + padding_top + border_top,
         };
 
         let inset_size = Size {
-            width: (parent_size.width - padding_left - padding_right - border_size * 2.0).max(0.0),
-            height: (parent_size.height - padding_top - padding_bottom - border_size * 2.0).max(0.0),
+            width: (parent_size.width - padding_left - padding_right - border_left - border_right).max(0.0),
+            height: (parent_size.height - padding_top - padding_bottom - border_top - border_bottom).max(0.0),
         };
 
         (inset_location, inset_size)
@@ -361,17 +407,17 @@ impl Shaper {
         let mut system_styles: SystemStyles = sized_resolver_block_node.resolver_block_node.system_styles.clone();
         system_styles.opacity *= inherited_opacity;
 
-        let actual_size: Size = Self::calculate_actual_size(&mut system_styles, parent_size);
+        let size: Size = sized_resolver_block_node.size;
 
         let clip: Clip = Clip {
             x: if system_styles.get_unambiguous_overflow("x") == Overflow::False {
-                intersect_range(inherited_clip.x, (parent_location.x, parent_location.x + actual_size.width))
+                intersect_range(inherited_clip.x, (parent_location.x, parent_location.x + size.width))
             } else {
                 inherited_clip.x
             },
 
             y: if system_styles.get_unambiguous_overflow("y") == Overflow::False {
-                intersect_range(inherited_clip.y, (parent_location.y, parent_location.y + actual_size.height))
+                intersect_range(inherited_clip.y, (parent_location.y, parent_location.y + size.height))
             } else {
                 inherited_clip.y
             },
@@ -386,7 +432,7 @@ impl Shaper {
             arbitrary_attributes: sized_resolver_block_node.resolver_block_node.arbitrary_attributes.clone(),
             system_styles,
             arbitrary_styles: sized_resolver_block_node.resolver_block_node.arbitrary_styles.clone(),
-            size: actual_size,
+            size,
             location: parent_location,
             clip,
             children,
@@ -400,19 +446,6 @@ impl Shaper {
             Direction::Horizontal => location.x,
             Direction::Vertical => location.y,
         }
-    }
-
-    // Actual size is the height/width of a block after checking if height/width_percent is defined.
-    fn calculate_actual_size(styles: &mut SystemStyles, parent_size: Size) -> Size {
-        if let Some(percentage) = styles.width_percent {
-            styles.width = parent_size.width * percentage;
-        }
-
-        if let Some(percentage) = styles.height_percent {
-            styles.height = parent_size.height * percentage;
-        }
-
-        Size { width: styles.width, height: styles.height }
     }
 
     fn get_breakable_margin(styles: &SystemStyles, direction: Direction) -> (f32, f32) {
