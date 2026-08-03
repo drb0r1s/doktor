@@ -1,31 +1,33 @@
+use serde::{Serialize, Deserialize};
+
 use crate::frontend::resolver_ast::{SystemAttributes, SystemStyles};
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct Size {
     pub width: f32,
     pub height: f32,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct Location {
     pub x: f32,
     pub y: f32,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct Clip {
     pub x: (f32, f32),
     pub y: (f32, f32),
 }
 
-#[derive(serde::Deserialize)]
+#[derive(Deserialize)]
 pub struct TextMeasurement {
     pub path: Vec<usize>,
     pub width: f32,
     pub height: f32,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(Deserialize)]
 pub struct ImageMeasurement {
     pub path: Vec<usize>,
     pub width: f32,

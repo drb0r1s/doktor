@@ -1,0 +1,83 @@
+use std::collections::HashMap;
+
+use crate::frontend::resolver_ast::Overflow;
+
+use crate::middleend::shaper_ast::{Location, Size, Clip, ShaperBlockNode, ShaperDoktorNode};
+use crate::middleend::scroller_ast::{ScrollerBlockNode, ScrollerDoktorNode};
+
+pub struct Scroller;
+
+impl Scroller {
+    pub fn new() -> Self {
+        Scroller
+    }
+    
+    pub fn scroll(&self, shaper_doktor_node: ShaperDoktorNode, scroll_offsets: &HashMap<String, Location>) -> ScrollerDoktorNode {
+        let children: Vec<ScrollerBlockNode> = shaper_doktor_node.children.into_iter().map(|child| Self::block_scroll(child, Location { x: 0.0, y: 0.0 }, scroll_offsets)).collect();
+
+        ScrollerDoktorNode { children }
+    }
+
+    fn block_scroll(shaper_block_node: ShaperBlockNode, inherited_offset: Location, scroll_offsets: &HashMap<String, Location>) -> ScrollerBlockNode {
+        // Applying any offset that block has inherited from its ancestors.
+        let location: Location = Location {
+            x: shaper_block_node.location.x - inherited_offset.x,
+            y: shaper_block_node.location.y - inherited_offset.y,
+        };
+
+        let clip: Clip = Clip {
+            x: (shaper_block_node.clip.x.0 - inherited_offset.x, shaper_block_node.clip.x.1 - inherited_offset.x),
+            y: (shaper_block_node.clip.y.0 - inherited_offset.y, shaper_block_node.clip.y.1 - inherited_offset.y),
+        };
+
+        // Determining if this block has scrolling.
+        let is_overflow_x_scroll: bool = shaper_block_node.system_styles.get_unambiguous_overflow("x") == Overflow::Scroll;
+        let is_overflow_y_scroll: bool = shaper_block_node.system_styles.get_unambiguous_overflow("y") == Overflow::Scroll;
+
+        let content_size: Size = Self::get_content_size(&shaper_block_node.children);
+
+        let overflow_x_exists: bool = content_size.width > shaper_block_node.size.width;
+        let overflow_y_exists: bool = content_size.height > shaper_block_node.size.height;
+
+        let is_scrollable_x: bool = is_overflow_x_scroll && overflow_x_exists;
+        let is_scrollable_y: bool = is_overflow_y_scroll && overflow_y_exists;
+
+        let block_offset: Location = scroll_offsets.get(&shaper_block_node.tag).copied().unwrap_or(Location { x: 0.0, y: 0.0 });
+
+        let child_offset = Location {
+            x: if is_scrollable_x { block_offset.x } else { 0.0 },
+            y: if is_overflow_y_scroll { block_offset.y } else { 0.0 },
+        };
+
+        let children: Vec<ScrollerBlockNode> = shaper_block_node.children.into_iter().map(|child| Self::block_scroll(child, child_offset, scroll_offsets)).collect();
+
+        ScrollerBlockNode {
+            block_type: shaper_block_node.block_type,
+            tag: shaper_block_node.tag,
+            system_attributes: shaper_block_node.system_attributes,
+            arbitrary_attributes: shaper_block_node.arbitrary_attributes,
+            system_styles: shaper_block_node.system_styles,
+            arbitrary_styles: shaper_block_node.arbitrary_styles,
+            size: shaper_block_node.size,
+            location,
+            clip,
+            is_scrollable_x,
+            is_scrollable_y,
+            children,
+            line: shaper_block_node.line,
+            column: shaper_block_node.column,
+        }
+    }
+
+    fn get_content_size(children: &[ShaperBlockNode]) -> Size {
+        let mut max_x: f32 = 0.0;
+        let mut max_y: f32 = 0.0;
+
+        for child in children {
+            max_x = max_x.max(child.location.x + child.size.width);
+            max_y = max_y.max(child.location.y + child.size.height);
+        }
+
+        Size { width: max_x, height: max_y }
+    }
+}

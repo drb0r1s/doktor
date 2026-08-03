@@ -1,4 +1,4 @@
-use crate::middleend::shaper_ast::{ShaperBlockNode, ShaperDoktorNode};
+use crate::middleend::scroller_ast::{ScrollerBlockNode, ScrollerDoktorNode};
 use crate::middleend::painter_ast::{Rectangle, Text, Image, DrawStructure};
 
 pub struct Painter;
@@ -8,17 +8,17 @@ impl Painter {
         Painter
     }
 
-    pub fn paint(&self, shaper_doktor_node: ShaperDoktorNode) -> Vec<DrawStructure> {
+    pub fn paint(&self, scroller_doktor_node: ScrollerDoktorNode) -> Vec<DrawStructure> {
         let mut draw_structures: Vec<DrawStructure> = Vec::new();
 
-        for child in &shaper_doktor_node.children {
+        for child in &scroller_doktor_node.children {
             self.paint_block(child, &mut draw_structures);
         }
 
         draw_structures
     }
 
-    fn paint_block(&self, block: &ShaperBlockNode, draw_structures: &mut Vec<DrawStructure>) {
+    fn paint_block(&self, block: &ScrollerBlockNode, draw_structures: &mut Vec<DrawStructure>) {
         if let Some(draw_structure) = self.block_to_draw_structure(block) {
             draw_structures.push(draw_structure);
         }
@@ -28,7 +28,7 @@ impl Painter {
         }
     }
 
-    fn block_to_draw_structure(&self, block: &ShaperBlockNode) -> Option<DrawStructure> {
+    fn block_to_draw_structure(&self, block: &ScrollerBlockNode) -> Option<DrawStructure> {
         match block.block_type.as_str() {
             "Image" => {
                 let source: String = match &block.system_attributes.source {

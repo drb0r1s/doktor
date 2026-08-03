@@ -3,6 +3,7 @@ use js_sys::{Float32Array, Uint8Array};
 
 use doktorc::middleend::shaper_ast::{TextMeasurement, ImageMeasurement};
 use doktorc::middleend::shaper::Shaper;
+use doktorc::middleend::scroller::Scroller;
 use doktorc::middleend::painter::Painter;
 
 use doktorc::backend::packer::Packer;
@@ -34,7 +35,8 @@ pub fn compile(written_doktorb: &[u8], viewport_width: f32, viewport_height: f32
     let image_measurements: Vec<ImageMeasurement> = serde_wasm_bindgen::from_value(js_image_measurements).map_err(|e| JsValue::from_str(&format!("Failed to parse measurements: {e}")))?;
 
     let shaper_doktor_node = Shaper::new(viewport_width, viewport_height).shape(resolver_doktor_node, &text_measurements, &image_measurements);
-    let draw_structures = Painter::new().paint(shaper_doktor_node);
+    let scroller_doktor_node = Scroller::new().scroll(shaper_doktor_node);
+    let draw_structures = Painter::new().paint(scroller_doktor_node);
 
     let packed_packets = Packer::new().pack(&draw_structures);
 
