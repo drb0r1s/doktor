@@ -61,4 +61,23 @@ impl DoktorRuntime {
 
         ParsedDoktorb::new(packed_packets.numeric_buffer, packed_packets.string_table)
     }
+
+    #[wasm_bindgen(js_name = getBlock)]
+    pub fn get_block(&self, id: u32) -> Result<JsValue, JsValue> {
+        let shaper_doktor_node: ShaperDoktorNode = self.latest_shaper_doktor_node.as_ref().ok_or_else(|| JsValue::from_str("No prior layout available"))?;
+        let found_block: ShaperBlockNode = shaper_doktor_node.children.iter().find_map(|child| Self::find_block(child, id));
+
+        match found {
+            Some(block) => serde_wasm_bindgen::to_value(block).map_err(|e| JsValue::from_str(&format!("Failed to serialize block: {e}"))),
+            None => Ok(JsValue::NULL),
+        }
+    }
+
+    fn find_block(node: &ShaperBlockNode, id: u32) -> Option<&ShaperBlockNode> {
+        if node.id == id {
+            return Some(node);
+        }
+
+        node.children.iter().find_map(|child| Self::find_block(child, id))
+    }
 }
