@@ -5,6 +5,8 @@ use crate::middleend::shaper_ast::{Location, Clip};
 #[derive(Debug, Clone, PartialEq)]
 pub struct Rectangle {
     pub location: Location,
+    pub is_scrollable_x: bool,
+    pub is_scrollable_y: bool,
     pub width: f32,
     pub height: f32,
     pub clip: Clip,

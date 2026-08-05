@@ -36,8 +36,10 @@ impl DoktorRuntime {
         let image_measurements: Vec<ImageMeasurement> = serde_wasm_bindgen::from_value(js_image_measurements).map_err(|e| JsValue::from_str(&format!("Failed to parse measurements: {e}")))?;
 
         let shaper_doktor_node = Shaper::new(viewport_width, viewport_height).shape(resolver_doktor_node, &text_measurements, &image_measurements);
-        let scroller_doktor_node = Scroller::new().scroll(shaper_doktor_node, &self.scroll_offsets);
+        let scroller_doktor_node = Scroller::new().scroll(&shaper_doktor_node, &self.scroll_offsets);
         let draw_structures = Painter::new().paint(scroller_doktor_node);
+
+        self.latest_shaper_doktor_node = Some(shaper_doktor_node);
 
         Ok(Self::pack(&draw_structures))
     }
@@ -48,7 +50,7 @@ impl DoktorRuntime {
 
         let shaper_doktor_node = self.latest_shaper_doktor_node.as_ref().ok_or_else(|| JsValue::from_str("No prior layout to scroll"))?;
 
-        let scroller_doktor_node = Scroller::new().scroll(shaper_doktor_node.clone(), &self.scroll_offsets);
+        let scroller_doktor_node = Scroller::new().scroll(shaper_doktor_node, &self.scroll_offsets);
         let draw_structures = Painter::new().paint(scroller_doktor_node);
 
         Ok(Self::pack(&draw_structures))

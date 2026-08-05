@@ -89,6 +89,8 @@ impl Painter {
             _ => {
                 Some(DrawStructure::Rectangle(Rectangle {
                     location: block.location,
+                    is_scrollable_x: block.is_scrollable_x,
+                    is_scrollable_y: block.is_scrollable_y,
                     width: block.size.width,
                     height: block.size.height,
                     clip: block.clip,

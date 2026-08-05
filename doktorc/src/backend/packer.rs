@@ -43,6 +43,9 @@ impl Packer {
         row[packet_structure::PACKET_X] = rectangle.location.x;
         row[packet_structure::PACKET_Y] = rectangle.location.y;
 
+        row[packet_structure::PACKET_IS_SCROLLABLE_X] = if rectangle.is_scrollable_x { 1.0 } else { 0.0 };
+        row[packet_structure::PACKET_IS_SCROLLABLE_Y] = if rectangle.is_scrollable_y { 1.0 } else { 0.0 };
+
         row[packet_structure::PACKET_WIDTH] = rectangle.width;
         row[packet_structure::PACKET_HEIGHT] = rectangle.height;
 

@@ -178,6 +178,9 @@ export class WebglRenderer {
                 const x = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_X];
                 const y = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_Y];
 
+                const isScrollableX = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_IS_SCROLLABLE_X];
+                const isScrollableY = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_IS_SCROLLABLE_Y];
+
                 const width = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_WIDTH];
                 const height = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_HEIGHT];
 
@@ -195,6 +198,9 @@ export class WebglRenderer {
 
                 this.applyScissor(clipXStart, clipXEnd, clipYStart, clipYEnd);
                 this.drawRectangle(x, y, width, height, backgroundColor.r / 255, backgroundColor.g / 255, backgroundColor.b / 255, backgroundColorAlpha / 255, border, opacity);
+            
+                if(isScrollableX) this.drawScrollbarX(x, y, width, height);
+                if(isScrollableY) this.drawScrollbarY(x, y, width, height);
             }
             
             else if(type === PACKET_STRUCTURE.PACKET_IMAGE_TYPE) {
@@ -357,6 +363,41 @@ export class WebglRenderer {
         gl.bindTexture(gl.TEXTURE_2D, texture);
 
         gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
+
+    drawScrollbarX(x, y, width, height) {
+        const trackHeight = 8;
+        const trackY = y + height - trackHeight;
+
+        this.drawScrollbarTrack(x, trackY, width, trackHeight, 0, 0, 0, 0.1);
+
+        const thumbWidth = width * 0.3;
+        const thumbX = x;
+
+        this.drawScrollbarTrack(thumbX, trackY, thumbWidth, trackHeight, 0, 0, 0, 0.4);
+    }
+
+    drawScrollbarY(x, y, width, height) {
+        const trackWidth = 8;
+        const trackX = x + width - trackWidth;
+
+        this.drawScrollbarTrack(trackX, y, trackWidth, height, 0, 0, 0, 0.1);
+
+        const thumbHeight = height * 0.3;
+        const thumbY = y;
+
+        this.drawScrollbarTrack(trackX, thumbY, trackWidth, thumbHeight, 0, 0, 0, 0.4);
+    }
+
+    drawScrollbarTrack(x, y, width, height, r, g, b, a) {
+        const border = {
+            top: { r: 0, g: 0, b: 0, a: 0, size: 0, type: 0 },
+            bottom: { r: 0, g: 0, b: 0, a: 0, size: 0, type: 0 },
+            left: { r: 0, g: 0, b: 0, a: 0, size: 0, type: 0 },
+            right: { r: 0, g: 0, b: 0, a: 0, size: 0, type: 0 },
+        };
+
+        this.drawRectangle(x, y, width, height, r, g, b, a, border, 1);
     }
 
     extractBorders(numericBuffer, rowStart) {

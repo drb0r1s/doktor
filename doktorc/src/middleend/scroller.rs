@@ -12,13 +12,13 @@ impl Scroller {
         Scroller
     }
     
-    pub fn scroll(&self, shaper_doktor_node: ShaperDoktorNode, scroll_offsets: &HashMap<String, Location>) -> ScrollerDoktorNode {
-        let children: Vec<ScrollerBlockNode> = shaper_doktor_node.children.into_iter().map(|child| Self::block_scroll(child, Location { x: 0.0, y: 0.0 }, scroll_offsets)).collect();
+    pub fn scroll(&self, shaper_doktor_node: &ShaperDoktorNode, scroll_offsets: &HashMap<String, Location>) -> ScrollerDoktorNode {
+        let children: Vec<ScrollerBlockNode> = shaper_doktor_node.children.iter().map(|child| Self::block_scroll(child, Location { x: 0.0, y: 0.0 }, scroll_offsets)).collect();
 
         ScrollerDoktorNode { children }
     }
 
-    fn block_scroll(shaper_block_node: ShaperBlockNode, inherited_offset: Location, scroll_offsets: &HashMap<String, Location>) -> ScrollerBlockNode {
+    fn block_scroll(shaper_block_node: &ShaperBlockNode, inherited_offset: Location, scroll_offsets: &HashMap<String, Location>) -> ScrollerBlockNode {
         // Applying any offset that block has inherited from its ancestors.
         let location: Location = Location {
             x: shaper_block_node.location.x - inherited_offset.x,
@@ -49,15 +49,15 @@ impl Scroller {
             y: if is_overflow_y_scroll { block_offset.y } else { 0.0 },
         };
 
-        let children: Vec<ScrollerBlockNode> = shaper_block_node.children.into_iter().map(|child| Self::block_scroll(child, child_offset, scroll_offsets)).collect();
+        let children: Vec<ScrollerBlockNode> = shaper_block_node.children.iter().map(|child| Self::block_scroll(child, child_offset, scroll_offsets)).collect();
 
         ScrollerBlockNode {
-            block_type: shaper_block_node.block_type,
-            tag: shaper_block_node.tag,
-            system_attributes: shaper_block_node.system_attributes,
-            arbitrary_attributes: shaper_block_node.arbitrary_attributes,
-            system_styles: shaper_block_node.system_styles,
-            arbitrary_styles: shaper_block_node.arbitrary_styles,
+            block_type: shaper_block_node.block_type.clone(),
+            tag: shaper_block_node.tag.clone(),
+            system_attributes: shaper_block_node.system_attributes.clone(),
+            arbitrary_attributes: shaper_block_node.arbitrary_attributes.clone(),
+            system_styles: shaper_block_node.system_styles.clone(),
+            arbitrary_styles: shaper_block_node.arbitrary_styles.clone(),
             size: shaper_block_node.size,
             location,
             clip,
