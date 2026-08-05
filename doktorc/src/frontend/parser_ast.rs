@@ -18,6 +18,7 @@ pub struct Style {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ParserBlockNode {
+    pub id: u64,
     pub block_type: String,
     pub tag: String,
     pub attributes: Vec<Attribute>,
@@ -65,7 +66,7 @@ impl ParserBlockNode {
     fn write_indented(&self, f: &mut fmt::Formatter<'_>, depth: usize) -> fmt::Result {
         let padding: String = "  ".repeat(depth);
 
-        write!(f, "{}[{}:{}] {}", padding, self.line, self.column, self.block_type)?;
+        write!(f, "{}[{}:{}] #{} {}", padding, self.line, self.column, self.id, self.block_type)?;
         if !self.tag.is_empty() {
             write!(f, ": {}", self.tag)?;
         }

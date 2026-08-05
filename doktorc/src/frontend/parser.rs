@@ -26,6 +26,7 @@ impl std::error::Error for ParserError {}
 pub struct Parser {
     tokens: Vec<Token>,
     position: usize,
+    next_id: u64,
 }
 
 impl Parser {
@@ -33,7 +34,15 @@ impl Parser {
         Parser {
             tokens,
             position: 0,
+            next_id: 0,
         }
+    }
+
+    fn next_id(&mut self) -> u64 {
+        let id: u64 = self.next_id;
+        self.next_id += 1;
+
+        id
     }
 
     fn current_token(&self) -> &Token {
@@ -89,6 +98,7 @@ impl Parser {
         let identifier_token: Token = self.expect(TokenType::Identifier, "for block type")?;
 
         let mut parser_block_node = ParserBlockNode {
+            id: self.next_id(),
             block_type: identifier_token.content,
             tag: String::new(),
             attributes: Vec::new(),
