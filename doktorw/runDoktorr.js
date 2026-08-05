@@ -1,4 +1,4 @@
-import init, { compile, getTextMeasurementRequests, getImageMeasurementRequests } from "../doktorr/pkg/doktorr.js";
+import init, { DoktorRuntime, getTextMeasurementRequests, getImageMeasurementRequests } from "../doktorr/pkg/doktorr.js";
 import { WebglRenderer } from "./renderers/webgl/webglRenderer.js";
 import { TextRenderer } from "./renderers/textRenderer.js";
 import { measureTexts } from "./functions/measureTexts.js";
@@ -16,7 +16,8 @@ async function run() {
     const imageMeasurementRequests = getImageMeasurementRequests(bytes);
     const imageMeasurements = await measureImages(imageMeasurementRequests);
 
-    const parsed = compile(bytes, window.innerWidth, window.innerHeight, textMeasurements, imageMeasurements);
+    const doktorRuntime = new DoktorRuntime();
+    const parsed = doktorRuntime.compile(bytes, window.innerWidth, window.innerHeight, textMeasurements, imageMeasurements);
 
     const numericBuffer = parsed.numericBuffer();
     const stringTable = parsed.stringTable();
