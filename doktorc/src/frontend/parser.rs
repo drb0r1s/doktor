@@ -26,7 +26,7 @@ impl std::error::Error for ParserError {}
 pub struct Parser {
     tokens: Vec<Token>,
     position: usize,
-    next_id: u64,
+    next_id: u32,
 }
 
 impl Parser {
@@ -38,8 +38,8 @@ impl Parser {
         }
     }
 
-    fn next_id(&mut self) -> u64 {
-        let id: u64 = self.next_id;
+    fn next_id(&mut self) -> u32 {
+        let id: u32 = self.next_id;
         self.next_id += 1;
 
         id

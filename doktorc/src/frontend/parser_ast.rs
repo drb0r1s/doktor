@@ -18,7 +18,7 @@ pub struct Style {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ParserBlockNode {
-    pub id: u64,
+    pub id: u32,
     pub block_type: String,
     pub tag: String,
     pub attributes: Vec<Attribute>,

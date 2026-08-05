@@ -5,6 +5,7 @@ use crate::middleend::shaper_ast::{Size, Location, Clip};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ScrollerBlockNode {
+    pub id: u32,
     pub block_type: String,
     pub tag: String,
     pub system_attributes: SystemAttributes,

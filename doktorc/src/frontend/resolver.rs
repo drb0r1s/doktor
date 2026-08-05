@@ -82,6 +82,7 @@ impl Resolver {
         let children = parser_block_node.children.into_iter().map(|child_node| self.resolve_block(child_node)).collect();
 
         ResolverBlockNode {
+            id: parser_block_node.id,
             block_type: parser_block_node.block_type,
             tag: parser_block_node.tag,
             system_attributes,

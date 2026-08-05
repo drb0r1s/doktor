@@ -36,6 +36,8 @@ pub struct ImageMeasurement {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ShaperBlockNode {
+    pub id: u32,
+
     pub block_type: String,
     pub tag: String,
 

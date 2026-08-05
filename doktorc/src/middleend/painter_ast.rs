@@ -4,6 +4,7 @@ use crate::middleend::shaper_ast::{Location, Clip};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Rectangle {
+    pub id: u32,
     pub location: Location,
     pub is_scrollable_x: bool,
     pub is_scrollable_y: bool,
@@ -28,6 +29,7 @@ pub struct Rectangle {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Text {
+    pub id: u32,
     pub location: Location,
     pub clip: Clip,
     pub content: String,
@@ -52,6 +54,7 @@ pub struct Text {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Image {
+    pub id: u32,
     pub location: Location,
     pub width: f32,
     pub height: f32,

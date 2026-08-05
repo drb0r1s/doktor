@@ -299,6 +299,7 @@ impl SystemStyles {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ResolverBlockNode {
+    pub id: u32,
     pub block_type: String,
     pub tag: String,
     pub system_attributes: SystemAttributes,

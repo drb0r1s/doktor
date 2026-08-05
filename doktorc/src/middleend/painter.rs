@@ -37,6 +37,7 @@ impl Painter {
                 };
 
                 Some(DrawStructure::Image(Image {
+                    id: block.id,
                     location: block.location,
                     width: block.size.width,
                     height: block.size.height,
@@ -63,6 +64,7 @@ impl Painter {
                 let content: String = block.system_attributes.content.clone().unwrap_or_default();
 
                 Some(DrawStructure::Text(Text {
+                    id: block.id,
                     location: block.location,
                     clip: block.clip,
                     content,
@@ -88,6 +90,7 @@ impl Painter {
 
             _ => {
                 Some(DrawStructure::Rectangle(Rectangle {
+                    id: block.id,
                     location: block.location,
                     is_scrollable_x: block.is_scrollable_x,
                     is_scrollable_y: block.is_scrollable_y,

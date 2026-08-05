@@ -52,6 +52,7 @@ impl Scroller {
         let children: Vec<ScrollerBlockNode> = shaper_block_node.children.iter().map(|child| Self::block_scroll(child, child_offset, scroll_offsets)).collect();
 
         ScrollerBlockNode {
+            id: shaper_block_node.id,
             block_type: shaper_block_node.block_type.clone(),
             tag: shaper_block_node.tag.clone(),
             system_attributes: shaper_block_node.system_attributes.clone(),

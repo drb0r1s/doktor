@@ -426,6 +426,7 @@ impl Shaper {
         let children: Vec<ShaperBlockNode> = self.locate_children(&sized_resolver_block_node.children, &system_styles, parent_location, sized_resolver_block_node.size, clip.clone());
 
         ShaperBlockNode {
+            id: sized_resolver_block_node.resolver_block_node.id,
             block_type: sized_resolver_block_node.resolver_block_node.block_type.clone(),
             tag: sized_resolver_block_node.resolver_block_node.tag.clone(),
             system_attributes: sized_resolver_block_node.resolver_block_node.system_attributes.clone(),
