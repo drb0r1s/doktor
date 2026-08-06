@@ -2,6 +2,8 @@ use std::collections::HashMap;
 
 use wasm_bindgen::prelude::*;
 
+use doktorc::frontend::resolver_ast::Overflow;
+
 use doktorc::middleend::shaper_ast::{Location, TextMeasurement, ImageMeasurement, ShaperBlockNode, ShaperDoktorNode};
 use doktorc::middleend::shaper::Shaper;
 use doktorc::middleend::scroller::Scroller;
@@ -14,7 +16,7 @@ use crate::parsed_doktorb::ParsedDoktorb;
 
 #[wasm_bindgen]
 pub struct DoktorRuntime {
-    scroll_offsets: HashMap<String, Location>,
+    scroll_offsets: HashMap<u32, Location>,
     latest_shaper_doktor_node: Option<ShaperDoktorNode>,
 }
 
@@ -45,8 +47,8 @@ impl DoktorRuntime {
     }
 
     #[wasm_bindgen(js_name = updateScrollOffset)]
-    pub fn update_scroll_offset(&mut self, tag: String, x: f32, y: f32) -> Result<ParsedDoktorb, JsValue> {
-        self.scroll_offsets.insert(tag, Location { x, y });
+    pub fn update_scroll_offset(&mut self, id: u32, x: f32, y: f32) -> Result<ParsedDoktorb, JsValue> {
+        self.scroll_offsets.insert(id, Location { x, y });
 
         let shaper_doktor_node = self.latest_shaper_doktor_node.as_ref().ok_or_else(|| JsValue::from_str("No prior layout to scroll"))?;
 
@@ -85,6 +87,34 @@ impl DoktorRuntime {
         }
 
         None
+    }
+
+    #[wasm_bindgen(js_name = getScrollableAncestor)]
+    pub fn get_scrollable_ancestor(&self, x: f32, y: f32) -> Result<JsValue, JsValue> {
+        let shaper_doktor_node: &ShaperDoktorNode = self.latest_shaper_doktor_node.as_ref().ok_or_else(|| JsValue::from_str("No prior layout available"))?;
+        let found_block = shaper_doktor_node.children.iter().find_map(|child| Self::find_scrollable_ancestor(child, x, y, None));
+
+        match found_block {
+            Some(block) => serde_wasm_bindgen::to_value(block).map_err(|e| JsValue::from_str(&format!("Failed to serialize block: {e}"))),
+            None => Ok(JsValue::NULL),
+        }
+    }
+
+    fn find_scrollable_ancestor<'a>(block: &'a ShaperBlockNode, x: f32, y: f32, nearest_scrollable: Option<&'a ShaperBlockNode>) -> Option<&'a ShaperBlockNode> {
+        if !Self::is_block_target(block, x, y) {
+            return None;
+        }
+
+        let is_scrollable = block.system_styles.get_unambiguous_overflow("x") == Overflow::Scroll || block.system_styles.get_unambiguous_overflow("y") == Overflow::Scroll;
+
+        let carried = if is_scrollable { Some(block) } else { nearest_scrollable };
+
+        // Deepest scrollable block will be scrolled, we need to check the children.
+        if let Some(found) = block.children.iter().find_map(|child| Self::find_scrollable_ancestor(child, x, y, carried)) {
+            return Some(found);
+        }
+
+        carried
     }
 
     fn is_block_target(node: &ShaperBlockNode, x: f32, y: f32) -> bool {

@@ -6,7 +6,6 @@ import { Events } from "./events.js";
 export class DoktorWeb {
     constructor() {
         this.doktorRuntime = null;
-        this.compiledDoktorRuntime = null;
     }
 
     async compile() {
@@ -20,18 +19,18 @@ export class DoktorWeb {
             const imageMeasurements = await Measurer.images(bytes);
             
             this.doktorRuntime = new DoktorRuntime();
-            this.compiledDoktorRuntime = this.doktorRuntime.compile(bytes, window.innerWidth, window.innerHeight, textMeasurements, imageMeasurements);
+            return this.doktorRuntime.compile(bytes, window.innerWidth, window.innerHeight, textMeasurements, imageMeasurements);
         }
 
         catch(error) { console.error(error) }
     }
 
-    async draw() {
+    async draw(compiledDoktorRuntime = null) {
         try {
-            if(this.compiledDoktorRuntime === null) return;
+            if(compiledDoktorRuntime === null) return;
 
-            const numericBuffer = this.compiledDoktorRuntime.numericBuffer();
-            const stringTable = this.compiledDoktorRuntime.stringTable();
+            const numericBuffer = compiledDoktorRuntime.numericBuffer();
+            const stringTable = compiledDoktorRuntime.stringTable();
             
             const drawStructuresCount = numericBuffer.length / 16;
                 
@@ -44,6 +43,8 @@ export class DoktorWeb {
 
     setupEvents() {
         if(this.doktorRuntime === null) return;
+
         Events.click(this.doktorRuntime);
+        Events.scroll(this.doktorRuntime);
     }
 }

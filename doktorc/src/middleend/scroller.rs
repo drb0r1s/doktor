@@ -12,13 +12,13 @@ impl Scroller {
         Scroller
     }
     
-    pub fn scroll(&self, shaper_doktor_node: &ShaperDoktorNode, scroll_offsets: &HashMap<String, Location>) -> ScrollerDoktorNode {
+    pub fn scroll(&self, shaper_doktor_node: &ShaperDoktorNode, scroll_offsets: &HashMap<u32, Location>) -> ScrollerDoktorNode {
         let children: Vec<ScrollerBlockNode> = shaper_doktor_node.children.iter().map(|child| Self::block_scroll(child, Location { x: 0.0, y: 0.0 }, scroll_offsets)).collect();
 
         ScrollerDoktorNode { children }
     }
 
-    fn block_scroll(shaper_block_node: &ShaperBlockNode, inherited_offset: Location, scroll_offsets: &HashMap<String, Location>) -> ScrollerBlockNode {
+    fn block_scroll(shaper_block_node: &ShaperBlockNode, inherited_offset: Location, scroll_offsets: &HashMap<u32, Location>) -> ScrollerBlockNode {
         // Applying any offset that block has inherited from its ancestors.
         let location: Location = Location {
             x: shaper_block_node.location.x - inherited_offset.x,
@@ -42,7 +42,7 @@ impl Scroller {
         let is_scrollable_x: bool = is_overflow_x_scroll && overflow_x_exists;
         let is_scrollable_y: bool = is_overflow_y_scroll && overflow_y_exists;
 
-        let block_offset: Location = scroll_offsets.get(&shaper_block_node.tag).copied().unwrap_or(Location { x: 0.0, y: 0.0 });
+        let block_offset: Location = scroll_offsets.get(&shaper_block_node.id).copied().unwrap_or(Location { x: 0.0, y: 0.0 });
 
         let child_offset = Location {
             x: if is_scrollable_x { block_offset.x } else { 0.0 },

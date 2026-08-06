@@ -1,11 +1,16 @@
 import { DoktorWeb } from "./scripts/doktorWeb.js";
 
-async function run() {
-    const doktorWeb = new DoktorWeb();
+const doktorWeb = new DoktorWeb();
 
-    await doktorWeb.compile();
-    await doktorWeb.draw();
+async function run() {
+    const compiledDoktorRuntime = await doktorWeb.compile();
+    await redraw(compiledDoktorRuntime);
+
     doktorWeb.setupEvents();
+}
+
+export async function redraw(compiledDoktorRuntime) {
+    await doktorWeb.draw(compiledDoktorRuntime);
 }
 
 run();
