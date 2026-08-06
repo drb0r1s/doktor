@@ -26,6 +26,8 @@ async function run() {
 
     await webglDraw(numericBuffer, stringTable, drawStructuresCount);
     textDraw(numericBuffer, stringTable, drawStructuresCount);
+
+    setupClickHandler(doktorRuntime);
 }
 
 run().catch(console.error);
@@ -53,4 +55,19 @@ function getCanvas(id) {
     canvas.height = window.innerHeight;
 
     return canvas;
+}
+
+function setupClickHandler(doktorRuntime) {
+    const textCanvas = getCanvas("text-canvas"); // Text canvas is located over the WebGL one, so it will get all the events.
+
+    textCanvas.addEventListener("click", event => {
+        const rect = textCanvas.getBoundingClientRect();
+
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+
+        const block = doktorRuntime.getBlock(x, y);
+
+        if(block) console.log(block);
+    });
 }
