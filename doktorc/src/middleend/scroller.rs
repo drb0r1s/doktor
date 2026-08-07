@@ -25,10 +25,22 @@ impl Scroller {
             y: shaper_block_node.location.y - inherited_offset.y,
         };
 
-        let clip: Clip = intersect_clip(inherited_clip, Clip {
-            x: (location.x, location.x + shaper_block_node.size.width),
-            y: (location.y, location.y + shaper_block_node.size.height),
-        });
+        let overflow_x: Overflow = shaper_block_node.system_styles.get_unambiguous_overflow("x");
+        let overflow_y: Overflow = shaper_block_node.system_styles.get_unambiguous_overflow("y");
+
+        let clip: Clip = Clip {
+            x: if overflow_x == Overflow::False || overflow_x == Overflow::Scroll {
+                intersect_range(inherited_clip.x, (location.x, location.x + shaper_block_node.size.width))
+            } else {
+                inherited_clip.x
+            },
+
+            y: if overflow_y == Overflow::False || overflow_y == Overflow::Scroll {
+                intersect_range(inherited_clip.y, (location.y, location.y + shaper_block_node.size.height))
+            } else {
+                inherited_clip.y
+            },
+        };
 
         // Determining if this block has scrolling.
         let is_overflow_x_scroll: bool = shaper_block_node.system_styles.get_unambiguous_overflow("x") == Overflow::Scroll;
@@ -93,9 +105,6 @@ impl Scroller {
     }
 }
 
-fn intersect_clip(a: Clip, b: Clip) -> Clip {
-    Clip {
-        x: (a.x.0.max(b.x.0), a.x.1.min(b.x.1)),
-        y: (a.y.0.max(b.y.0), a.y.1.min(b.y.1)),
-    }
+fn intersect_range(existing: (f32, f32), new: (f32, f32)) -> (f32, f32) {
+    (existing.0.max(new.0), existing.1.min(new.1))
 }
