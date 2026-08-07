@@ -409,14 +409,17 @@ impl Shaper {
 
         let size: Size = sized_resolver_block_node.size;
 
+        let overflow_x: Overflow = system_styles.get_unambiguous_overflow("x");
+        let overflow_y: Overflow = system_styles.get_unambiguous_overflow("y");
+
         let clip: Clip = Clip {
-            x: if system_styles.get_unambiguous_overflow("x") == Overflow::False {
+            x: if overflow_x == Overflow::False || overflow_x == Overflow::Scroll {
                 intersect_range(inherited_clip.x, (parent_location.x, parent_location.x + size.width))
             } else {
                 inherited_clip.x
             },
 
-            y: if system_styles.get_unambiguous_overflow("y") == Overflow::False {
+            y: if overflow_y == Overflow::False || overflow_y == Overflow::Scroll {
                 intersect_range(inherited_clip.y, (parent_location.y, parent_location.y + size.height))
             } else {
                 inherited_clip.y
