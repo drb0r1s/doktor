@@ -1,9 +1,8 @@
 import { redraw } from "../index.js";
-import { getCanvas } from "./functions/getCanvas.js";
 
 export const Events = {
     click: doktorRuntime => {
-        const textCanvas = getCanvas("text-canvas"); // Text canvas is located over the WebGL one, so it will get all the events.
+        const textCanvas = document.getElementById("text-canvas"); // Text canvas is located over the WebGL one, so it will get all the events.
 
         textCanvas.addEventListener("click", event => {
             const rect = textCanvas.getBoundingClientRect();
@@ -18,7 +17,7 @@ export const Events = {
     },
 
     scroll: doktorRuntime => {
-        const textCanvas = getCanvas("text-canvas");
+        const textCanvas = document.getElementById("text-canvas");
         const scrollOffsets = new Map();
 
         textCanvas.addEventListener("wheel", async event => {

@@ -1,10 +1,10 @@
 import { WebglRenderer } from "./renderers/webgl/webglRenderer.js";
 import { TextRenderer } from "./renderers/textRenderer.js";
-import { getCanvas } from "./functions/getCanvas.js";
+import { setupCanvas } from "./functions/setupCanvas.js";
 
 export const Drawer = {
     webgl: async (numericBuffer, stringTable, drawStructuresCount) => {
-        const canvas = getCanvas("webgl-canvas");
+        const canvas = setupCanvas("webgl-canvas");
     
         const webglRenderer = new WebglRenderer(canvas);
     
@@ -13,7 +13,7 @@ export const Drawer = {
     },
 
     text: (numericBuffer, stringTable, drawStructuresCount) => {
-        const canvas = getCanvas("text-canvas");
+        const canvas = setupCanvas("text-canvas");
     
         const textRenderer = new TextRenderer(canvas);
         textRenderer.drawText(numericBuffer, stringTable, drawStructuresCount);

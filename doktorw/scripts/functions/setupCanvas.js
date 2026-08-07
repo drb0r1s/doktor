@@ -1,4 +1,4 @@
-export function getCanvas(id) {
+export function setupCanvas(id) {
     const canvas = document.getElementById(id);
 
     canvas.width = window.innerWidth;
