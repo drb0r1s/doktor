@@ -7,7 +7,6 @@ use doktorc::frontend::resolver_ast::Overflow;
 use doktorc::middleend::shaper_ast::{Location, Clip, TextMeasurement, ImageMeasurement, ShaperBlockNode, ShaperDoktorNode};
 use doktorc::middleend::shaper::Shaper;
 use doktorc::middleend::scroller::Scroller;
-use doktorc::middleend::painter_ast::DrawStructure;
 use doktorc::middleend::painter::Painter;
 
 use doktorc::backend::packer::Packer;
@@ -38,11 +37,6 @@ impl DoktorRuntime {
     pub fn compile(&mut self, written_doktorb: &[u8], viewport_width: f32, viewport_height: f32, js_text_measurements: JsValue, js_image_measurements: JsValue) -> Result<ParsedDoktorb, JsValue> {
         self.viewport_width = viewport_width;
         self.viewport_height = viewport_height;
-
-        let viewport_clip: Clip = Clip {
-            x: (0.0, self.viewport_width),
-            y: (0.0, self.viewport_height),
-        };
         
         let resolver_doktor_node = bincode::deserialize(written_doktorb).map_err(|e| JsValue::from_str(&format!("Failed to deserialize: {e}")))?;
 
@@ -50,12 +44,9 @@ impl DoktorRuntime {
         let image_measurements: Vec<ImageMeasurement> = serde_wasm_bindgen::from_value(js_image_measurements).map_err(|e| JsValue::from_str(&format!("Failed to parse measurements: {e}")))?;
 
         let shaper_doktor_node = Shaper::new(viewport_width, viewport_height).shape(resolver_doktor_node, &text_measurements, &image_measurements);
-        let scroller_doktor_node = Scroller::new().scroll(&shaper_doktor_node, viewport_clip, &self.scroll_offsets);
-        let draw_structures = Painter::new().paint(scroller_doktor_node);
-
         self.latest_shaper_doktor_node = Some(shaper_doktor_node);
 
-        Ok(Self::pack(&draw_structures))
+        Ok(self.finalize(self.latest_shaper_doktor_node))
     }
 
     #[wasm_bindgen(js_name = updateScrollOffset)]
@@ -63,7 +54,10 @@ impl DoktorRuntime {
         self.scroll_offsets.insert(id, Location { x, y });
 
         let shaper_doktor_node = self.latest_shaper_doktor_node.as_ref().ok_or_else(|| JsValue::from_str("No prior layout to scroll"))?;
+        Ok(self.finalize(shaper_doktor_node))
+    }
 
+    fn finalize(&self, shaper_doktor_node: &ShaperDoktorNode) -> ParsedDoktorb {
         let viewport_clip: Clip = Clip {
             x: (0.0, self.viewport_width),
             y: (0.0, self.viewport_height),
@@ -72,12 +66,7 @@ impl DoktorRuntime {
         let scroller_doktor_node = Scroller::new().scroll(shaper_doktor_node, viewport_clip, &self.scroll_offsets);
         let draw_structures = Painter::new().paint(scroller_doktor_node);
 
-        Ok(Self::pack(&draw_structures))
-    }
-
-    fn pack(draw_structures: &Vec<DrawStructure>) -> ParsedDoktorb {
-        let packed_packets = Packer::new().pack(draw_structures);
-
+        let packed_packets = Packer::new().pack(&draw_structures);
         ParsedDoktorb::new(packed_packets.numeric_buffer, packed_packets.string_table)
     }
 
