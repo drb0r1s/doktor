@@ -1,55 +1,8 @@
 import { unpackColor } from "../../functions/unpackColor.js";
+import { loadImage } from "../../functions/loadImage.js";
 import { RECTANGLE_VERTEX_SHADER_SOURCE, RECTANGLE_FRAGMENT_SHADER_SOURCE } from "./shaders/rectangle.js";
 import { IMAGE_VERTEX_SHADER_SOURCE, IMAGE_FRAGMENT_SHADER_SOURCE } from "./shaders/image.js";
 import { PACKET_STRUCTURE } from "../../data/packetStructure.js";
-
-function compileShader(gl, type, source) {
-    const shader = gl.createShader(type);
-
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
-
-    if(!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        const info = gl.getShaderInfoLog(shader);
-        gl.deleteShader(shader);
-
-        throw new Error(`Shader compile error: ${info}`);
-    }
-
-    return shader;
-}
-
-function createProgram(gl, vertexSource, fragmentSource) {
-    const vertexShader = compileShader(gl, gl.VERTEX_SHADER, vertexSource);
-    const fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, fragmentSource);
-
-    const program = gl.createProgram();
-
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-
-    gl.linkProgram(program);
-
-    if(!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-        const info = gl.getProgramInfoLog(program);
-        gl.deleteProgram(program);
-
-        throw new Error(`Program link error: ${info}`);
-    }
-
-    return program;
-}
-
-function loadImage(source) {
-    return new Promise((resolve, reject) => {
-        const img = new window.Image();
-
-        img.onload = () => resolve(img);
-        img.onerror = () => reject(new Error(`Failed to load image: ${source}`));
-
-        img.src = source;
-    });
-}
 
 export class WebglRenderer {
     constructor(canvas) {
@@ -178,11 +131,17 @@ export class WebglRenderer {
                 const x = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_X];
                 const y = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_Y];
 
+                const width = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_WIDTH];
+                const height = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_HEIGHT];
+
                 const isScrollableX = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_IS_SCROLLABLE_X];
                 const isScrollableY = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_IS_SCROLLABLE_Y];
 
-                const width = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_WIDTH];
-                const height = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_HEIGHT];
+                const scrollableWidth = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_SCROLLABLE_WIDTH];
+                const scrollableHeight = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_SCROLLABLE_HEIGHT];
+
+                const scrollOffsetX = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_SCROLL_OFFSET_X];
+                const scrollOffsetY = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_SCROLL_OFFSET_Y];
 
                 const clipXStart = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_CLIP_X_START];
                 const clipXEnd = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_CLIP_X_END];
@@ -199,8 +158,8 @@ export class WebglRenderer {
                 this.applyScissor(clipXStart, clipXEnd, clipYStart, clipYEnd);
                 this.drawRectangle(x, y, width, height, backgroundColor.r / 255, backgroundColor.g / 255, backgroundColor.b / 255, backgroundColorAlpha / 255, border, opacity);
             
-                if(isScrollableX) this.drawScrollbarX(x, y, width, height);
-                if(isScrollableY) this.drawScrollbarY(x, y, width, height);
+                if(isScrollableX) this.drawScrollbarX(x, y, width, height, scrollableWidth, scrollOffsetX);
+                if(isScrollableY) this.drawScrollbarY(x, y, width, height, scrollableHeight, scrollOffsetY);
             }
             
             else if(type === PACKET_STRUCTURE.PACKET_IMAGE_TYPE) {
@@ -365,26 +324,28 @@ export class WebglRenderer {
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
 
-    drawScrollbarX(x, y, width, height) {
+    drawScrollbarX(x, y, width, height, scrollableWidth, scrollOffsetX) {
         const trackHeight = 8;
         const trackY = y + height - trackHeight;
 
         this.drawScrollbarTrack(x, trackY, width, trackHeight, 0, 0, 0, 0.1);
 
-        const thumbWidth = width * 0.3;
-        const thumbX = x;
+        const thumbWidth = Math.max(20, width * (width / scrollableWidth));
+        const maxOffset = Math.max(scrollableWidth - width, 1);
+        const thumbX = x + (scrollOffsetX / maxOffset) * (width - thumbWidth);
 
         this.drawScrollbarTrack(thumbX, trackY, thumbWidth, trackHeight, 0, 0, 0, 0.4);
     }
 
-    drawScrollbarY(x, y, width, height) {
+    drawScrollbarY(x, y, width, height, scrollableHeight, scrollOffsetY) {
         const trackWidth = 8;
         const trackX = x + width - trackWidth;
 
         this.drawScrollbarTrack(trackX, y, trackWidth, height, 0, 0, 0, 0.1);
 
-        const thumbHeight = height * 0.3;
-        const thumbY = y;
+        const thumbHeight = Math.max(20, height * (height / scrollableHeight));
+        const maxOffset = Math.max(scrollableHeight - height, 1);
+        const thumbY = y + (scrollOffsetY / maxOffset) * (height - thumbHeight);
 
         this.drawScrollbarTrack(trackX, thumbY, trackWidth, thumbHeight, 0, 0, 0, 0.4);
     }
@@ -435,4 +396,41 @@ export class WebglRenderer {
         gl.enable(gl.SCISSOR_TEST);
         gl.scissor(clipXStart, scissorY, scissorWidth, scissorHeight);
     }
+}
+
+function compileShader(gl, type, source) {
+    const shader = gl.createShader(type);
+
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+
+    if(!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        const info = gl.getShaderInfoLog(shader);
+        gl.deleteShader(shader);
+
+        throw new Error(`Shader compile error: ${info}`);
+    }
+
+    return shader;
+}
+
+function createProgram(gl, vertexSource, fragmentSource) {
+    const vertexShader = compileShader(gl, gl.VERTEX_SHADER, vertexSource);
+    const fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, fragmentSource);
+
+    const program = gl.createProgram();
+
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+
+    gl.linkProgram(program);
+
+    if(!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+        const info = gl.getProgramInfoLog(program);
+        gl.deleteProgram(program);
+
+        throw new Error(`Program link error: ${info}`);
+    }
+
+    return program;
 }

@@ -17,6 +17,8 @@ pub struct ScrollerBlockNode {
     pub clip: Clip,
     pub is_scrollable_x: bool,
     pub is_scrollable_y: bool,
+    pub scrollable_size: Size,
+    pub scroll_offset: Location,
     pub children: Vec<ScrollerBlockNode>,
     pub line: usize,
     pub column: usize,

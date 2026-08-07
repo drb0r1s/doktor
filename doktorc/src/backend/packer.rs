@@ -45,11 +45,17 @@ impl Packer {
         row[packet_structure::PACKET_X] = rectangle.location.x;
         row[packet_structure::PACKET_Y] = rectangle.location.y;
 
+        row[packet_structure::PACKET_WIDTH] = rectangle.width;
+        row[packet_structure::PACKET_HEIGHT] = rectangle.height;
+
         row[packet_structure::PACKET_IS_SCROLLABLE_X] = if rectangle.is_scrollable_x { 1.0 } else { 0.0 };
         row[packet_structure::PACKET_IS_SCROLLABLE_Y] = if rectangle.is_scrollable_y { 1.0 } else { 0.0 };
 
-        row[packet_structure::PACKET_WIDTH] = rectangle.width;
-        row[packet_structure::PACKET_HEIGHT] = rectangle.height;
+        row[packet_structure::PACKET_SCROLLABLE_WIDTH] = rectangle.scrollable_width;
+        row[packet_structure::PACKET_SCROLLABLE_HEIGHT] = rectangle.scrollable_height;
+
+        row[packet_structure::PACKET_SCROLL_OFFSET_X] = rectangle.scroll_offset.x;
+        row[packet_structure::PACKET_SCROLL_OFFSET_Y] = rectangle.scroll_offset.y;
 
         row[packet_structure::PACKET_CLIP_X_START] = rectangle.clip.x.0;
         row[packet_structure::PACKET_CLIP_X_END] = rectangle.clip.x.1;

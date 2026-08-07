@@ -44,9 +44,11 @@ impl DoktorRuntime {
         let image_measurements: Vec<ImageMeasurement> = serde_wasm_bindgen::from_value(js_image_measurements).map_err(|e| JsValue::from_str(&format!("Failed to parse measurements: {e}")))?;
 
         let shaper_doktor_node = Shaper::new(viewport_width, viewport_height).shape(resolver_doktor_node, &text_measurements, &image_measurements);
+        let parsed_doktorb = self.finalize(&shaper_doktor_node);
+        
         self.latest_shaper_doktor_node = Some(shaper_doktor_node);
 
-        Ok(self.finalize(self.latest_shaper_doktor_node))
+        Ok(parsed_doktorb)
     }
 
     #[wasm_bindgen(js_name = updateScrollOffset)]

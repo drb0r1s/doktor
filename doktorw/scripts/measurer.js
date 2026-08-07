@@ -1,4 +1,5 @@
 import { getTextMeasurementRequests, getImageMeasurementRequests } from "../../doktorr/pkg/doktorr.js";
+import { loadImage } from "./functions/loadImage.js";
 
 export const Measurer = {
     texts: bytes => {
@@ -43,15 +44,4 @@ async function measureImages(imageMeasurementRequests) {
             };
         })
     );
-}
-
-function loadImage(source) {
-    return new Promise((resolve, reject) => {
-        const image = new window.Image();
-
-        image.onload = () => resolve(image);
-        image.onerror = () => reject(new Error(`Failed to load image: ${source}`));
-
-        image.src = source;
-    });
 }
