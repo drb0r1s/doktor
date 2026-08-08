@@ -1,4 +1,5 @@
 use std::fmt;
+use std::collections::HashMap;
 
 use crate::frontend::parser_ast::{Attribute, Style, ParserBlockNode, ParserDoktorNode};
 use crate::frontend::resolver_ast::{RGB, Layout, Direction, Alignment, parse_font, BorderType, Overflow, SystemAttributes, SystemStyles, ResolverBlockNode, ResolverDoktorNode};
@@ -39,7 +40,7 @@ impl fmt::Display for SemanticError {
 
 impl std::error::Error for SemanticError {}
 
-const SYSTEM_BLOCK_TYPES: &[&str] = &["Group", "Image", "Text", "Input", "Button", "Collection"];
+const SYSTEM_BLOCK_TYPES: &[&str] = &["Group", "Image", "Text", "Input", "Collection", "Styles", "Style"];
 
 pub struct Resolver {
     warnings: Vec<SemanticWarning>,
@@ -55,12 +56,57 @@ impl Resolver {
     }
 
     pub fn resolve(mut self, parser_doktor_node: ParserDoktorNode) -> (ResolverDoktorNode, Vec<SemanticWarning>, Vec<SemanticError>) {
-        let children = parser_doktor_node.children.into_iter().map(|parser_block_node| self.resolve_block(parser_block_node)).collect();
+        let tag_styles = Self::collect_tag_styles(&parser_doktor_node.children);
+        let children = self.filter_style_blocks(parser_doktor_node.children, &tag_styles);
 
         (ResolverDoktorNode { children }, self.warnings, self.errors)
     }
 
-    fn resolve_block(&mut self, parser_block_node: ParserBlockNode) -> ResolverBlockNode {
+    fn collect_tag_styles(children: &[ParserBlockNode]) -> HashMap<String, Vec<Style>> {
+        let mut tag_styles: HashMap<String, Vec<Style>> = HashMap::new();
+
+        for block in children {
+            if block.block_type == "Styles" {
+                for style_block in &block.children {
+                    if style_block.block_type == "Style" && !style_block.tag.is_empty() {
+                        tag_styles.insert(style_block.tag.clone(), style_block.styles.clone());
+                    }
+                }
+            }
+        }
+
+        tag_styles
+    }
+
+    fn filter_style_blocks(&mut self, children: Vec<ParserBlockNode>, tag_styles: &HashMap<String, Vec<Style>>) -> Vec<ResolverBlockNode> {
+        children.into_iter().filter_map(|child| {
+            match child.block_type.as_str() {
+                "Styles" => {
+                    self.warnings.push(SemanticWarning {
+                        message: "'Styles' block is only valid at the top level of the document and has been ignored".to_string(),
+                        line: child.line,
+                        column: child.column,
+                    });
+
+                    None
+                }
+
+                "Style" => {
+                    self.warnings.push(SemanticWarning {
+                        message: "'Style' block is only valid as a child of 'Styles' block at the top level of the document and has been ignored".to_string(),
+                        line: child.line,
+                        column: child.column,
+                    });
+
+                    None
+                }
+
+                _ => Some(self.resolve_block(child, tag_styles))
+            }
+        }).collect()
+    }
+
+    fn resolve_block(&mut self, parser_block_node: ParserBlockNode, tag_styles: &HashMap<String, Vec<Style>>) -> ResolverBlockNode {        
         let resolved_block_type: &str = if SYSTEM_BLOCK_TYPES.contains(&parser_block_node.block_type.as_str()) {
             &parser_block_node.block_type
         } else {
@@ -79,7 +125,7 @@ impl Resolver {
         let (system_attributes, arbitrary_attributes) = self.resolve_attributes(resolved_block_type, parser_block_node.attributes);
         let (system_styles, arbitrary_styles) = self.resolve_styles(parser_block_node.styles, &parser_block_node.block_type);
 
-        let children = parser_block_node.children.into_iter().map(|child_node| self.resolve_block(child_node)).collect();
+        let children = self.filter_style_blocks(parser_block_node.children, tag_styles);
 
         ResolverBlockNode {
             id: parser_block_node.id,
