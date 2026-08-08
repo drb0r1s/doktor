@@ -18,7 +18,9 @@ export const Events = {
 
     scroll: doktorRuntime => {
         const textCanvas = document.getElementById("text-canvas");
+        
         const scrollOffsets = new Map();
+        let pendingOffset = null;
 
         textCanvas.addEventListener("wheel", async event => {
             const rect = textCanvas.getBoundingClientRect();
@@ -40,9 +42,21 @@ export const Events = {
             };
 
             scrollOffsets.set(scrollableBlock.id, newOffset);
-
-            const compiledDoktorRuntime = doktorRuntime.updateScrollOffset(scrollableBlock.id, newOffset.x, newOffset.y);
-            await redraw(compiledDoktorRuntime);
+            pendingOffset = { id: scrollableBlock.id, x: newOffset.x, y: newOffset.y };
         });
+
+        requestAnimationFrame(tick);
+
+        async function tick() {
+            if(pendingOffset) {
+                const { id, x, y } = pendingOffset;
+                pendingOffset = null;
+
+                const compiledDoktorRuntime = doktorRuntime.updateScrollOffset(id, x, y);
+                await redraw(compiledDoktorRuntime);
+            }
+
+            requestAnimationFrame(tick);
+        }
     },
 };
