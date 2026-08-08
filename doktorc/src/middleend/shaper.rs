@@ -279,9 +279,7 @@ impl Shaper {
                 Direction::Vertical => child.size.height,
             };
 
-            let parent_breakable_location: f32 = Self::get_breakable_parent_location(parent_location, parent_direction);
-
-            if breakable_cursor > 0.0 && parent_breakable_location + breakable_cursor + breakable_size > breakable_bound {
+            if breakable_cursor > 0.0 && breakable_cursor + breakable_size > breakable_bound {
                 lines.push(std::mem::take(&mut current_line));
                 breakable_cursor = 0.0;
             }
@@ -442,13 +440,6 @@ impl Shaper {
             children,
             line: sized_resolver_block_node.resolver_block_node.line,
             column: sized_resolver_block_node.resolver_block_node.column,
-        }
-    }
-
-    fn get_breakable_parent_location(location: Location, direction: Direction) -> f32 {
-        match direction {
-            Direction::Horizontal => location.x,
-            Direction::Vertical => location.y,
         }
     }
 
