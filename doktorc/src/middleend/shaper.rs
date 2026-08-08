@@ -123,8 +123,19 @@ impl Shaper {
                     // width: sum of children widths
                     // height: max children height
                     Direction::Horizontal => {
-                        let minimal_width: f32 = sized_children.iter().map(|child| child.size.width).sum();
-                        let minimal_height: f32 = sized_children.iter().map(|child| child.size.height).fold(0.0, f32::max);
+                        let minimal_width: f32 = sized_children.iter().map(|child| {
+                            let margin_left: f32 = child.resolver_block_node.system_styles.get_unambiguous_spacing("margin", "left");
+                            let margin_right: f32 = child.resolver_block_node.system_styles.get_unambiguous_spacing("margin", "right");
+
+                            child.size.width + margin_left + margin_right
+                        }).sum();
+
+                        let minimal_height: f32 = sized_children.iter().map(|child| {
+                            let margin_top: f32 = child.resolver_block_node.system_styles.get_unambiguous_spacing("margin", "top");
+                            let margin_bottom: f32 = child.resolver_block_node.system_styles.get_unambiguous_spacing("margin", "bottom");
+
+                            child.size.height + margin_top + margin_bottom
+                        }).fold(0.0, f32::max);
                         
                         Size {
                             width: minimal_width.max(style_width),
@@ -178,8 +189,13 @@ impl Shaper {
         let padding_left: f32 = block.system_styles.get_unambiguous_spacing("padding", "left");
         let padding_right: f32 = block.system_styles.get_unambiguous_spacing("padding", "right");
 
-        let inset_x: f32 = padding_left + padding_right + block.system_styles.border_size * 2.0;
-        let inset_y: f32 = padding_top + padding_bottom + block.system_styles.border_size * 2.0;
+        let border_top: f32 = block.system_styles.get_unambiguous_border_size("top");
+        let border_bottom: f32 = block.system_styles.get_unambiguous_border_size("bottom");
+        let border_left: f32 = block.system_styles.get_unambiguous_border_size("left");
+        let border_right: f32 = block.system_styles.get_unambiguous_border_size("right");
+
+        let inset_x: f32 = padding_left + padding_right + border_left + border_right;
+        let inset_y: f32 = padding_top + padding_bottom + border_top + border_bottom;
 
         if inset_x > 0.0 || inset_y > 0.0 {
             size.width = (size.width + inset_x).max(0.0);
