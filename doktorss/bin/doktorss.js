@@ -13,7 +13,7 @@ async function main() {
             const inputFile = args[0];
 
             if (!inputFile) {
-                console.error("Usage: doktor compile <file.doktor>");
+                console.error("[DOKTOR Scripts] Usage: doktor compile <file.doktor>.");
                 process.exit(1);
             }
 
@@ -27,8 +27,9 @@ async function main() {
         }
 
         default: {
-            console.error(`Unknown command: ${command ?? "(none)"}`);
-            console.error("Available commands: compile <file.doktor>, update");
+            console.error(`[DOKTOR Scripts] Unknown command: ${command ?? "(empty)"}.`);
+            console.error("[DOKTOR Scripts] Available commands: compile <file_name.doktor>, update.");
+
             process.exit(1);
         }
     }
