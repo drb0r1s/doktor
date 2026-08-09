@@ -123,7 +123,12 @@ impl Resolver {
         };
 
         let (system_attributes, arbitrary_attributes) = self.resolve_attributes(resolved_block_type, parser_block_node.attributes);
-        let (system_styles, arbitrary_styles) = self.resolve_styles(parser_block_node.styles, &parser_block_node.block_type);
+        
+        // Combining Style's block style properties with parser block's styles.
+        let mut merged_styles: Vec<Style> = tag_styles.get(&parser_block_node.tag).cloned().unwrap_or_default();
+        merged_styles.extend(parser_block_node.styles);
+        
+        let (system_styles, arbitrary_styles) = self.resolve_styles(merged_styles, &parser_block_node.block_type);
 
         let children = self.filter_style_blocks(parser_block_node.children, tag_styles);
 
