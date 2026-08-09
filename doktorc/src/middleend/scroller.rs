@@ -65,8 +65,8 @@ impl Scroller {
         };
 
         let child_offset = Location {
-            x: if is_scrollable_x { block_offset.x } else { 0.0 },
-            y: if is_overflow_y_scroll { block_offset.y } else { 0.0 },
+            x: inherited_offset.x + if is_scrollable_x { block_offset.x } else { 0.0 },
+            y: inherited_offset.y + if is_overflow_y_scroll { block_offset.y } else { 0.0 },
         };
 
         let children: Vec<ScrollerBlockNode> = shaper_block_node.children.iter().map(|child| Self::block_scroll(child, child_offset, clip.clone(), scroll_offsets)).collect();
