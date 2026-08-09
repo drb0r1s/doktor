@@ -15,7 +15,7 @@ impl fmt::Display for ParserError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Parser error at [{}:{}]: {}.",
+            "(Parser) Error [{}:{}]: {}",
             self.line, self.column, self.message
         )
     }
@@ -73,7 +73,7 @@ impl Parser {
 
             Err(ParserError {
                 message: format!(
-                    "Expected {:?} {}, found {:?} '{}'.",
+                    "Expected token {:?} {}, found {:?} \"{}\"",
                     token_type, context, found_token.token_type, found_token.content
                 ),
                 line: found_token.line,
@@ -95,7 +95,7 @@ impl Parser {
 
     fn parse_block(&mut self) -> Result<ParserBlockNode, ParserError> {
         let block_start_token: Token = self.expect(TokenType::BlockStart, "to start a block")?;
-        let identifier_token: Token = self.expect(TokenType::Identifier, "for block type")?;
+        let identifier_token: Token = self.expect(TokenType::Identifier, "to serve as a block type")?;
 
         let mut parser_block_node = ParserBlockNode {
             id: self.next_id(),
@@ -112,7 +112,7 @@ impl Parser {
         if self.is_current_token_type(&TokenType::Colon) {
             self.advance();
 
-            let block_tag_token: Token = self.expect(TokenType::Value, "for block tag")?;
+            let block_tag_token: Token = self.expect(TokenType::Value, "to serve as a block tag")?;
             parser_block_node.tag = block_tag_token.content;
         }
 
@@ -141,16 +141,16 @@ impl Parser {
                 parser_block_node.children.push(child_block_node);
             }
 
-            self.expect(TokenType::ChildrenEnd, "to close a children block")?;
+            self.expect(TokenType::ChildrenEnd, "to close a children area")?;
         }
 
         Ok(parser_block_node)
     }
 
     fn parse_attribute(&mut self) -> Result<Attribute, ParserError> {
-        let name_token: Token = self.expect(TokenType::Identifier, "for attribute name")?;
-        self.expect(TokenType::Colon, "after attribute name")?;
-        let value_token: Token = self.expect(TokenType::Value, "for attribute value")?;
+        let name_token: Token = self.expect(TokenType::Identifier, "to serve as an attribute name")?;
+        self.expect(TokenType::Colon, "after an attribute name")?;
+        let value_token: Token = self.expect(TokenType::Value, "to serve as an attribute value")?;
 
         Ok(Attribute {
             name: name_token.content,
@@ -177,9 +177,9 @@ impl Parser {
     }
 
     fn parse_style(&mut self) -> Result<Style, ParserError> {
-        let name_token = self.expect(TokenType::Identifier, "for style property name")?;
-        self.expect(TokenType::Colon, "after style property name")?;
-        let value_token = self.expect(TokenType::Value, "for style property value")?;
+        let name_token = self.expect(TokenType::Identifier, "to serve as a style property name")?;
+        self.expect(TokenType::Colon, "after a style property name")?;
+        let value_token = self.expect(TokenType::Value, "to serve as a style property value")?;
 
         Ok(Style {
             name: name_token.content,

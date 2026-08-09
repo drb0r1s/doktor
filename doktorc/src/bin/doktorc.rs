@@ -17,7 +17,7 @@ fn run(path: &str) -> Result<(), Box<dyn std::error::Error>> {
 
     DoktorbWriter::write_doktorb(&resolver_doktor_node, "out/compiled.doktorb");
 
-    println!("done");
+    println!("[DOKTOR Compiler] {} has been compiled to doktorc/out/compiled.doktorb.", path);
     
     Ok(())
 }
@@ -26,12 +26,12 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 2 {
-        eprintln!("[DOKTOR: Compiler] Usage: .\\doktorc.exe <source-code.doktor>");
+        eprintln!("[DOKTOR Compiler] Usage: .\\doktorc.exe <[file_name].doktor>.");
         process::exit(1);
     }
 
     if let Err(e) = run(&args[1]) {
-        eprintln!("[DOKTOR: Compiler] {}", e);
+        eprintln!("[DOKTOR Compiler] {}.", e);
         process::exit(1);
     }
 }

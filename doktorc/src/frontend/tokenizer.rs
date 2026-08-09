@@ -53,7 +53,7 @@ impl fmt::Display for TokenizerError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Tokenizer error at [{}:{}]: {}.",
+            "(Tokenizer) Error [{}:{}]: {}",
             self.line, self.column, self.message
         )
     }
@@ -155,7 +155,7 @@ impl Tokenizer {
 
         if content.is_empty() {
             return Err(TokenizerError {
-                message: format!("Expected identifier, found '{}'.", self.look_ahead(0)),
+                message: format!("Identifier expected, found \"{}\"", self.look_ahead(0)),
                 line: start_line,
                 column: start_column,
             });
@@ -199,7 +199,7 @@ impl Tokenizer {
 
         if trimmed.is_empty() {
             return Err(TokenizerError {
-                message: format!("Expected value before '{}'.", self.look_ahead(0)),
+                message: format!("Value expected before \"{}\"", self.look_ahead(0)),
                 line: start_line,
                 column: start_column,
             });

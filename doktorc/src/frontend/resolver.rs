@@ -5,47 +5,47 @@ use crate::frontend::parser_ast::{Attribute, Style, ParserBlockNode, ParserDokto
 use crate::frontend::resolver_ast::{RGB, Layout, Direction, Alignment, parse_font, BorderType, Overflow, SystemAttributes, SystemStyles, ResolverBlockNode, ResolverDoktorNode};
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct SemanticWarning {
+pub struct ResolverWarning {
     pub message: String,
     pub line: usize,
     pub column: usize,
 }
 
-impl fmt::Display for SemanticWarning {
+impl fmt::Display for ResolverWarning {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Semantic Warning at [{}:{}]: {}.",
+            "(Resolver) Warning [{}:{}]: {}",
             self.line, self.column, self.message
         )
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct SemanticError {
+pub struct ResolverError {
     pub message: String,
     pub line: usize,
     pub column: usize,
 }
 
-impl fmt::Display for SemanticError {
+impl fmt::Display for ResolverError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Semantic Error at [{}:{}]: {}.",
+            "(Resolver) Error [{}:{}]: {}",
             self.line, self.column, self.message
         )
     }
 }
 
-impl std::error::Error for SemanticError {}
+impl std::error::Error for ResolverError {}
 
 const SYSTEM_BLOCK_TYPES: &[&str] = &["Group", "Image", "Text", "Input", "Collection", "Styles", "Style"];
 const CHILDREN_BLOCK_TYPES: &[&str] = &["Group", "Collection", "Styles"];
 
 pub struct Resolver {
-    warnings: Vec<SemanticWarning>,
-    errors: Vec<SemanticError>,
+    warnings: Vec<ResolverWarning>,
+    errors: Vec<ResolverError>,
 }
 
 impl Resolver {
@@ -56,7 +56,7 @@ impl Resolver {
         }
     }
 
-    pub fn resolve(mut self, parser_doktor_node: ParserDoktorNode) -> (ResolverDoktorNode, Vec<SemanticWarning>, Vec<SemanticError>) {
+    pub fn resolve(mut self, parser_doktor_node: ParserDoktorNode) -> (ResolverDoktorNode, Vec<ResolverWarning>, Vec<ResolverError>) {
         let tag_styles = Self::collect_tag_styles(&parser_doktor_node.children);
         let children = self.filter_style_blocks(parser_doktor_node.children, &tag_styles);
 
@@ -83,8 +83,8 @@ impl Resolver {
         children.into_iter().filter_map(|child| {
             match child.block_type.as_str() {
                 "Styles" => {
-                    self.warnings.push(SemanticWarning {
-                        message: "'Styles' block is only valid at the top level of the document and has been ignored".to_string(),
+                    self.warnings.push(ResolverWarning {
+                        message: "\"Styles\" block is only valid at the top level of the document, it is ignored otherwise".to_string(),
                         line: child.line,
                         column: child.column,
                     });
@@ -93,8 +93,8 @@ impl Resolver {
                 }
 
                 "Style" => {
-                    self.warnings.push(SemanticWarning {
-                        message: "'Style' block is only valid as a child of 'Styles' block at the top level of the document and has been ignored".to_string(),
+                    self.warnings.push(ResolverWarning {
+                        message: "\"Style\" block is only valid as a child of a \"Styles\" block at the top level of the document, it is ignored otherwise".to_string(),
                         line: child.line,
                         column: child.column,
                     });
@@ -111,9 +111,9 @@ impl Resolver {
         let resolved_block_type: &str = if SYSTEM_BLOCK_TYPES.contains(&parser_block_node.block_type.as_str()) {
             &parser_block_node.block_type
         } else {
-            self.errors.push(SemanticError {
+            self.errors.push(ResolverError {
                 message: format!(
-                    "Unrecognized block type '{}', treating it as 'Group'",
+                    "Unrecognized block type \"{}\", it will be treated as a \"Group\"",
                     parser_block_node.block_type
                 ),
                 line: parser_block_node.line,
@@ -132,9 +132,9 @@ impl Resolver {
         let (system_styles, arbitrary_styles) = self.resolve_styles(merged_styles, &parser_block_node.block_type);
 
         let children = if !parser_block_node.children.is_empty() && !CHILDREN_BLOCK_TYPES.contains(&resolved_block_type) {
-            self.errors.push(SemanticError {
+            self.errors.push(ResolverError {
                 message: format!(
-                    "'{}' blocks cannot have children, children have been ignored",
+                    "Blocks of type \"{}\" cannot have children, they will be ignored",
                     resolved_block_type
                 ),
                 line: parser_block_node.line,
@@ -771,9 +771,9 @@ impl Resolver {
     }
 
     fn invalid_value_warning(&mut self, name: &str, value: &str, line: usize, column: usize) {
-        self.warnings.push(SemanticWarning {
+        self.warnings.push(ResolverWarning {
             message: format!(
-                "'{}' has an invalid value '{}' and has been ignored",
+                "\"{}\" has an invalid value \"{}\" and has been ignored",
                 name, value
             ),
             line,
