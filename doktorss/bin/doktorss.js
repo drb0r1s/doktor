@@ -5,6 +5,8 @@ const path = require("path");
 const { compile } = require("../lib/commands/compile");
 const { update } = require("../lib/commands/update");
 
+const { prefix } = require("../data/prefix");
+
 async function main() {
     const [command, ...args] = process.argv.slice(2);
 
@@ -13,7 +15,7 @@ async function main() {
             const inputFile = args[0];
 
             if (!inputFile) {
-                console.error("[DOKTOR Scripts] Usage: doktor compile <file.doktor>.");
+                console.error(`${prefix} Usage: doktor compile <file.doktor>.`);
                 process.exit(1);
             }
 
@@ -27,8 +29,8 @@ async function main() {
         }
 
         default: {
-            console.error(`[DOKTOR Scripts] Unknown command: ${command ?? "(empty)"}.`);
-            console.error("[DOKTOR Scripts] Available commands: compile <file_name.doktor>, update.");
+            console.error(`${prefix} Unknown command: ${command ?? "(empty)"}.`);
+            console.error(`${prefix} Available commands: compile <file_name.doktor>, update.`);
 
             process.exit(1);
         }
@@ -36,6 +38,6 @@ async function main() {
 }
 
 main().catch(error => {
-    console.error(error.message ?? error);
+    console.error(`${prefix} ${error.message ?? error}`);
     process.exit(1);
 });
