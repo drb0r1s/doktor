@@ -15,7 +15,7 @@ fn run(path: &str) -> Result<(), Box<dyn std::error::Error>> {
     let parser_doktor_node = Parser::new(tokens).parse()?;
     let (resolver_doktor_node, warnings, errors) = Resolver::new().resolve(parser_doktor_node);
 
-    DoktorbWriter::write_doktorb(&resolver_doktor_node, "src/out/compiled.doktorb");
+    DoktorbWriter::write_doktorb(&resolver_doktor_node, "out/compiled.doktorb");
 
     println!("done");
     

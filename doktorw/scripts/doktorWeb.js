@@ -12,7 +12,7 @@ export class DoktorWeb {
         try {
             await init(); // Loads .wasm, has to be written first.
         
-            const response = await fetch("../doktorc/src/out/compiled.doktorb");
+            const response = await fetch("../doktorc/out/compiled.doktorb");
             const bytes = new Uint8Array(await response.arrayBuffer());
             
             const textMeasurements = await Measurer.texts(bytes);
