@@ -1,4 +1,5 @@
 use std::fmt;
+use colored::Colorize;
 
 use crate::frontend::parser_ast::{Attribute, Style, ParserBlockNode, ParserDoktorNode};
 use crate::frontend::tokenizer::{TokenType, Token};
@@ -15,8 +16,8 @@ impl fmt::Display for ParserError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "(Parser) Error [{}:{}]: {}",
-            self.line, self.column, self.message
+            "{} {} [{}:{}]: {}",
+            "(Parser)".magenta().italic(), "Error".on_red(), self.line, self.column, self.message
         )
     }
 }

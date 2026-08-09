@@ -1,6 +1,8 @@
 use std::fmt;
 use std::collections::HashMap;
 
+use colored::Colorize;
+
 use crate::frontend::parser_ast::{Attribute, Style, ParserBlockNode, ParserDoktorNode};
 use crate::frontend::resolver_ast::{RGB, Layout, Direction, Alignment, parse_font, BorderType, Overflow, SystemAttributes, SystemStyles, ResolverBlockNode, ResolverDoktorNode};
 
@@ -15,8 +17,8 @@ impl fmt::Display for ResolverWarning {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "(Resolver) Warning [{}:{}]: {}",
-            self.line, self.column, self.message
+            "{} {} [{}:{}]: {}",
+            "(Resolver)".magenta().italic(), "Warning".on_yellow(), self.line, self.column, self.message
         )
     }
 }
@@ -32,8 +34,8 @@ impl fmt::Display for ResolverError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "(Resolver) Error [{}:{}]: {}",
-            self.line, self.column, self.message
+            "{} {} [{}:{}]: {}",
+            "(Resolver)".magenta().italic(), "Error".on_red(), self.line, self.column, self.message
         )
     }
 }

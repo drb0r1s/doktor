@@ -1,4 +1,5 @@
 use std::fmt;
+use colored::Colorize;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TokenType {
@@ -53,8 +54,8 @@ impl fmt::Display for TokenizerError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "(Tokenizer) Error [{}:{}]: {}",
-            self.line, self.column, self.message
+            "{} {} [{}:{}]: {}",
+            "(Tokenizer)".magenta().italic(), "Error".on_red(), self.line, self.column, self.message
         )
     }
 }
