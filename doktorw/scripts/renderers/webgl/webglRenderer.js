@@ -122,6 +122,7 @@ export class WebglRenderer {
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
         const decoder = new TextDecoder("utf-8");
+        const pendingScrollbars = [];
 
         for(let i = 0; i < drawStructuresCount; i++) {
             const rowStart = i * PACKET_STRUCTURE.PACKET_SIZE;
@@ -158,8 +159,7 @@ export class WebglRenderer {
                 this.applyScissor(clipXStart, clipXEnd, clipYStart, clipYEnd);
                 this.drawRectangle(x, y, width, height, backgroundColor.r / 255, backgroundColor.g / 255, backgroundColor.b / 255, backgroundColorAlpha / 255, border, opacity);
             
-                if(isScrollableX) this.drawScrollbarX(x, y, width, height, scrollableWidth, scrollOffsetX);
-                if(isScrollableY) this.drawScrollbarY(x, y, width, height, scrollableHeight, scrollOffsetY);
+                if(isScrollableX || isScrollableY) pendingScrollbars.push({ x, y, width, height, isScrollableX, isScrollableY, scrollableWidth, scrollableHeight, scrollOffsetX, scrollOffsetY, clipXStart, clipXEnd, clipYStart, clipYEnd });
             }
             
             else if(type === PACKET_STRUCTURE.PACKET_IMAGE_TYPE) {
@@ -192,6 +192,15 @@ export class WebglRenderer {
                 this.applyScissor(clipXStart, clipXEnd, clipYStart, clipYEnd);
                 this.drawImage(x, y, width, height, texture, backgroundColor.r / 255, backgroundColor.g / 255, backgroundColor.b / 255, backgroundColorAlpha / 255, border, opacity);
             }
+        }
+
+        gl.disable(gl.SCISSOR_TEST);
+
+        for(const pendingScrollbar of pendingScrollbars) {
+            this.applyScissor(pendingScrollbar.clipXStart, pendingScrollbar.clipXEnd, pendingScrollbar.clipYStart, pendingScrollbar.clipYEnd);
+
+            if(pendingScrollbar.isScrollableX) this.drawScrollbarX(pendingScrollbar.x, pendingScrollbar.y, pendingScrollbar.width, pendingScrollbar.height, pendingScrollbar.scrollableWidth, pendingScrollbar.scrollOffsetX);
+            if(pendingScrollbar.isScrollableY) this.drawScrollbarY(pendingScrollbar.x, pendingScrollbar.y, pendingScrollbar.width, pendingScrollbar.height, pendingScrollbar.scrollableHeight, pendingScrollbar.scrollOffsetY);
         }
     }
 
