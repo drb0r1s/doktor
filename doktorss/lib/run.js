@@ -14,7 +14,7 @@ function run(command, args, options = {}) {
 
         child.on("exit", code => {
             if(code === 0) resolve();
-            else reject(new Error(`${PREFIX} ${command} ${args.join(" ")} exited with code ${code}.`));
+            else reject(new Error(`${command} ${args.join(" ")} exited with code ${code}.`));
         });
     });
 }
