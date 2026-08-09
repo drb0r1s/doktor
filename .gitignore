@@ -1,5 +1,15 @@
-*/target
-*/out
-examples/*
+# DOKTORC
+target/
+out/
+
+# DOKTORW
 doktorw/imgs
-*/Cargo.lock
+
+# DOKTORC, DOKTORR
+Cargo.lock
+
+# DOKTORSS
+node_modules/
+
+# GENERAL
+examples/
