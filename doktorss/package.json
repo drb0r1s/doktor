@@ -1,0 +1,13 @@
+{
+    "name": "doktorss",
+    "version": "0.1.0",
+    "private": false,
+    "description": "Scripts for the DOKTOR language.",
+    "bin": {
+        "doktor": "bin/doktorss.js"
+    },
+    "type": "commonjs",
+    "engines": {
+        "node": ">=16"
+    }
+}
