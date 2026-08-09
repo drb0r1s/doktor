@@ -41,6 +41,7 @@ impl fmt::Display for SemanticError {
 impl std::error::Error for SemanticError {}
 
 const SYSTEM_BLOCK_TYPES: &[&str] = &["Group", "Image", "Text", "Input", "Collection", "Styles", "Style"];
+const CHILDREN_BLOCK_TYPES: &[&str] = &["Group", "Collection", "Styles"];
 
 pub struct Resolver {
     warnings: Vec<SemanticWarning>,
@@ -130,7 +131,20 @@ impl Resolver {
         
         let (system_styles, arbitrary_styles) = self.resolve_styles(merged_styles, &parser_block_node.block_type);
 
-        let children = self.filter_style_blocks(parser_block_node.children, tag_styles);
+        let children = if !parser_block_node.children.is_empty() && !CHILDREN_BLOCK_TYPES.contains(&resolved_block_type) {
+            self.errors.push(SemanticError {
+                message: format!(
+                    "'{}' blocks cannot have children, children have been ignored",
+                    resolved_block_type
+                ),
+                line: parser_block_node.line,
+                column: parser_block_node.column,
+            });
+
+            Vec::new()
+        } else {
+            self.filter_style_blocks(parser_block_node.children, tag_styles)
+        };
 
         ResolverBlockNode {
             id: parser_block_node.id,
