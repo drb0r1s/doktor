@@ -27,6 +27,22 @@ fn run(path: &str) -> Result<(), Box<dyn std::error::Error>> {
 
     println!("{} {} AST has been built.", get_prefix(), "(Resolver)".magenta().italic());
 
+    if warnings.len() > 0 {
+        println!("{} {} Warnings:", get_prefix(), "(Resolver)".magenta().italic());
+    }
+
+    for warning in &warnings {
+        println!("{}", warning);
+    }
+
+    if errors.len() > 0 {
+        println!("{} {} Errors:", get_prefix(), "(Resolver)".magenta().italic());
+    }
+
+    for error in &errors {
+        println!("{}", error);
+    }
+
     DoktorbWriter::write_doktorb(&resolver_doktor_node, "out/compiled.doktorb");
 
     println!("{} {} Resolver's AST has been serialized to DOKTOR Binary.", get_prefix(), "(Doktorb Writer)".magenta().italic());
