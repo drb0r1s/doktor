@@ -1,0 +1,17 @@
+{
+    "name": "doktors",
+    "version": "0.1.0",
+    "private": false,
+    "description": "Development server for the DOKTOR language.",
+    "bin": {
+        "doktor": "bin/doktors.js"
+    },
+    "type": "commonjs",
+    "engines": {
+        "node": ">=16"
+    },
+    "dependencies": {
+        "chokidar": "^3.6.0",
+        "ws": "^8.18.0"
+    }
+}
