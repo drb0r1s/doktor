@@ -266,7 +266,7 @@ impl Shaper {
                     y: inset_location.y + position_y,
                 };
 
-                self.get_shaper_block_node(child, location, parent_size, parent_clip, parent_styles.opacity)
+                self.get_shaper_block_node(child, location, parent_clip, parent_styles.opacity)
             }).collect()
         }
     }
@@ -382,7 +382,7 @@ impl Shaper {
                     },
                 };
 
-                result.push(self.get_shaper_block_node(child, location, parent_size, parent_clip.clone(), parent_styles.opacity));
+                result.push(self.get_shaper_block_node(child, location, parent_clip.clone(), parent_styles.opacity));
                 breakable_cursor += breakable_size;
             }
 
@@ -417,7 +417,7 @@ impl Shaper {
         (inset_location, inset_size)
     }
 
-    fn get_shaper_block_node(&self, sized_resolver_block_node: &SizedResolverBlockNode, parent_location: Location, parent_size: Size, inherited_clip: Clip, inherited_opacity: f32) -> ShaperBlockNode {
+    fn get_shaper_block_node(&self, sized_resolver_block_node: &SizedResolverBlockNode, parent_location: Location, inherited_clip: Clip, inherited_opacity: f32) -> ShaperBlockNode {
         let mut system_styles: SystemStyles = sized_resolver_block_node.resolver_block_node.system_styles.clone();
         system_styles.opacity *= inherited_opacity;
 

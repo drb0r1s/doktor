@@ -43,7 +43,7 @@ fn run(path: &str) -> Result<(), Box<dyn std::error::Error>> {
         println!("{}", error);
     }
 
-    DoktorbWriter::write_doktorb(&resolver_doktor_node, "out/compiled.doktorb");
+    let _ = DoktorbWriter::write_doktorb(&resolver_doktor_node, "out/compiled.doktorb");
 
     println!("{} {} Resolver's AST has been serialized to DOKTOR Binary.", get_prefix(), "(Doktorb Writer)".magenta().italic());
 
