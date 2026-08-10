@@ -4,6 +4,7 @@ const path = require("path");
 
 const { compile } = require("../lib/commands/compile");
 const { update } = require("../lib/commands/update");
+const { server } = require("../lib/commands/server");
 
 const { PREFIX } = require("../data/prefix");
 
@@ -14,8 +15,8 @@ async function main() {
         case "compile": {
             const inputFile = args[0];
 
-            if (!inputFile) {
-                console.error(`${PREFIX} Usage: doktor compile <file.doktor>.`);
+            if(!inputFile) {
+                console.error(`${PREFIX} Usage: doktor compile <file_name.doktor>.`);
                 process.exit(1);
             }
 
@@ -25,6 +26,18 @@ async function main() {
 
         case "update": {
             await update();
+            break;
+        }
+
+        case "server": {
+            const doktorFile = args[0];
+
+            if(!doktorFile) {
+                console.error(`${PREFIX} Usage: doktor server <file_name.doktor>`);
+                process.exit(1);
+            }
+
+            await server(path.resolve(process.cwd(), doktorFile));
             break;
         }
 
