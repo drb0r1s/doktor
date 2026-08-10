@@ -6,6 +6,8 @@ use colored::Colorize;
 use crate::frontend::parser_ast::{Attribute, Style, ParserBlockNode, ParserDoktorNode};
 use crate::frontend::resolver_ast::{RGB, Layout, Direction, Alignment, parse_font, BorderType, Overflow, SystemAttributes, SystemStyles, ResolverBlockNode, ResolverDoktorNode};
 
+use crate::data::prefix::get_prefix;
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct ResolverWarning {
     pub message: String,
@@ -17,8 +19,8 @@ impl fmt::Display for ResolverWarning {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{} {} [{}:{}]: {}",
-            "(Resolver)".magenta().italic(), "Warning".on_yellow(), self.line, self.column, self.message
+            "{} {} {} [{}:{}]: {}.",
+            get_prefix(), "(Resolver)".magenta().italic(), "Warning".on_yellow(), self.line, self.column, self.message
         )
     }
 }
@@ -34,8 +36,8 @@ impl fmt::Display for ResolverError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{} {} [{}:{}]: {}",
-            "(Resolver)".magenta().italic(), "Error".on_red(), self.line, self.column, self.message
+            "{} {} {} [{}:{}]: {}.",
+            get_prefix(), "(Resolver)".magenta().italic(), "Error".on_red(), self.line, self.column, self.message
         )
     }
 }
@@ -60,7 +62,7 @@ impl Resolver {
 
     pub fn resolve(mut self, parser_doktor_node: ParserDoktorNode) -> (ResolverDoktorNode, Vec<ResolverWarning>, Vec<ResolverError>) {
         let tag_styles = Self::collect_tag_styles(&parser_doktor_node.children);
-        let children = self.filter_style_blocks(parser_doktor_node.children, &tag_styles);
+        let children = self.filter_style_blocks(parser_doktor_node.children.into_iter().filter(|child| child.block_type != "Styles").collect(), &tag_styles);
 
         (ResolverDoktorNode { children }, self.warnings, self.errors)
     }
