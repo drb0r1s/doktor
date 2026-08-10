@@ -36,15 +36,44 @@ impl DoktorRuntime {
 
     #[wasm_bindgen(js_name=execute)]
     pub fn execute(&mut self, written_doktorb: &[u8], viewport_width: f32, viewport_height: f32, js_text_measurements: JsValue, js_image_measurements: JsValue) -> Result<ParsedDoktorb, JsValue> {
+        console::log_7(
+            &JsValue::from_str("%c[%cDOKTOR%c Runtime]%c Executing DOKTOR Binary %c(compiled.doktorb)%c..."),
+            &JsValue::from_str("color: orange;"),
+            &JsValue::from_str("color: orange; font-weight: bold;"),
+            &JsValue::from_str("color: orange;"),
+            &JsValue::from_str("color: inherit;"),
+            &JsValue::from_str("font-style: italic;"),
+            &JsValue::from_str("font-style: normal;"),
+        );
+        
         self.viewport_width = viewport_width;
         self.viewport_height = viewport_height;
         
         let resolver_doktor_node = bincode::deserialize(written_doktorb).map_err(|e| JsValue::from_str(&format!("Failed to deserialize: {e}")))?;
 
+        console::log_6(
+            &JsValue::from_str("%c[%cDOKTOR%c Runtime]%c (Resolver)%c AST has been deserialized."),
+            &JsValue::from_str("color: orange;"),
+            &JsValue::from_str("color: orange; font-weight: bold;"),
+            &JsValue::from_str("color: orange;"),
+            &JsValue::from_str("color: orange; font-style: italic;"),
+            &JsValue::from_str("color: inherit;"),
+        );
+
         let text_measurements: Vec<TextMeasurement> = serde_wasm_bindgen::from_value(js_text_measurements).map_err(|e| JsValue::from_str(&format!("Failed to parse measurements: {e}")))?;
         let image_measurements: Vec<ImageMeasurement> = serde_wasm_bindgen::from_value(js_image_measurements).map_err(|e| JsValue::from_str(&format!("Failed to parse measurements: {e}")))?;
 
         let shaper_doktor_node = Shaper::new(viewport_width, viewport_height).shape(resolver_doktor_node, &text_measurements, &image_measurements);
+        
+        console::log_6(
+            &JsValue::from_str("%c[%cDOKTOR%c Runtime]%c (Shaper)%c AST has been built."),
+            &JsValue::from_str("color: orange;"),
+            &JsValue::from_str("color: orange; font-weight: bold;"),
+            &JsValue::from_str("color: orange;"),
+            &JsValue::from_str("color: orange; font-style: italic;"),
+            &JsValue::from_str("color: inherit;"),
+        );
+
         let parsed_doktorb = self.finalize(&shaper_doktor_node);
         
         self.latest_shaper_doktor_node = Some(shaper_doktor_node);
@@ -67,9 +96,48 @@ impl DoktorRuntime {
         };
 
         let scroller_doktor_node = Scroller::new().scroll(shaper_doktor_node, viewport_clip, &self.scroll_offsets);
+
+        console::log_6(
+            &JsValue::from_str("%c[%cDOKTOR%c Runtime]%c (Scroller)%c AST has been built."),
+            &JsValue::from_str("color: orange;"),
+            &JsValue::from_str("color: orange; font-weight: bold;"),
+            &JsValue::from_str("color: orange;"),
+            &JsValue::from_str("color: orange; font-style: italic;"),
+            &JsValue::from_str("color: inherit;"),
+        );
+
         let draw_structures = Painter::new().paint(scroller_doktor_node);
 
+        console::log_6(
+            &JsValue::from_str("%c[%cDOKTOR%c Runtime]%c (Painter)%c Scroller's AST has been converted to drawing structures."),
+            &JsValue::from_str("color: orange;"),
+            &JsValue::from_str("color: orange; font-weight: bold;"),
+            &JsValue::from_str("color: orange;"),
+            &JsValue::from_str("color: orange; font-style: italic;"),
+            &JsValue::from_str("color: inherit;"),
+        );
+
         let packed_packets = Packer::new().pack(&draw_structures);
+
+        console::log_6(
+            &JsValue::from_str("%c[%cDOKTOR%c Runtime]%c (Packer)%c Drawing structures have been packed."),
+            &JsValue::from_str("color: orange;"),
+            &JsValue::from_str("color: orange; font-weight: bold;"),
+            &JsValue::from_str("color: orange;"),
+            &JsValue::from_str("color: orange; font-style: italic;"),
+            &JsValue::from_str("color: inherit;"),
+        );
+
+        console::log_7(
+            &JsValue::from_str("%c[%cDOKTOR%c Runtime]%c DOKTOR Binary %c(compiled.doktorb)%c has been executed."),
+            &JsValue::from_str("color: orange;"),
+            &JsValue::from_str("color: orange; font-weight: bold;"),
+            &JsValue::from_str("color: orange;"),
+            &JsValue::from_str("color: inherit;"),
+            &JsValue::from_str("font-style: italic;"),
+            &JsValue::from_str("font-style: normal;"),
+        );
+
         ParsedDoktorb::new(packed_packets.numeric_buffer, packed_packets.string_table)
     }
 
