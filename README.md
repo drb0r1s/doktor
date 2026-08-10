@@ -45,7 +45,7 @@ Tokenizer -> Parser -> Resolver (doktorc: frontend)
 Shaper -> Scroller -> Painter (doktorc: middle)
       │
       ▼
-Packer -> Doktorb Writer (doktorc: backend)
+Packer (doktorc: backend)
       │
       ▼
 .doktorb binary packet buffer (doktorr)
@@ -63,7 +63,7 @@ WASM runtime -> WebGL + Canvas 2D renderers (doktorr + doktorw)
 
 ## What already works
 
-- Full compiler pipeline: tokenizer -> parser -> resolver -> shaper -> scroller -> painter -> packer -> doktorb writer
+- Full compiler pipeline: tokenizer -> parser -> resolver -> shaper -> scroller -> painter -> packer
 - Real layout: wrapping, alignment, margin/padding, percentage sizing, locked dimensions, free-positioning
 - Overflow handling: clipped, visible, and scrollable content
 - Scrolling: wheel input, clamped bounds, scroll-position-aware scrollbars, correct z-ordering
@@ -81,7 +81,7 @@ WASM runtime -> WebGL + Canvas 2D renderers (doktorr + doktorw)
 
 | Repository | What it is |
 |---|---|
-| `doktorc` | The compiler: tokenizer, parser, resolver, shaper, scroller, painter, packer, doktorb writer |
+| `doktorc` | The compiler: tokenizer, parser, resolver, shaper, scroller, painter, packer |
 | `doktorr` | The Rust/WASM runtime that drives the browser-side pipeline |
 | `doktorw` | The JavaScript runtime: WebGL + Canvas 2D renderers, event handling |
 | `doktorss` | Cross-platform CLI for the dev loop (`doktor compile`, `doktor update`) |
