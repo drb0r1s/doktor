@@ -10,14 +10,26 @@ use std::env;
 use std::fs;
 use std::process;
 
+use colored::Colorize;
+
 fn run(path: &str) -> Result<(), Box<dyn std::error::Error>> {
     let source = fs::read_to_string(path)?;
 
     let tokens = Tokenizer::new(&source).tokenize()?;
+
+    println!("{} {} DOKTOR source code has been broken to tokens.", get_prefix(), "(Tokenizer)".magenta().italic());
+
     let parser_doktor_node = Parser::new(tokens).parse()?;
+
+    println!("{} {} AST has been built.", get_prefix(), "(Parser)".magenta().italic());
+
     let (resolver_doktor_node, warnings, errors) = Resolver::new().resolve(parser_doktor_node);
 
+    println!("{} {} AST has been built.", get_prefix(), "(Resolver)".magenta().italic());
+
     DoktorbWriter::write_doktorb(&resolver_doktor_node, "out/compiled.doktorb");
+
+    println!("{} {} Resolver's AST has been serialized to DOKTOR Binary.", get_prefix(), "(Doktorb Writer)".magenta().italic());
 
     println!("{} {} has been compiled to doktorc/out/compiled.doktorb.", get_prefix(), path);
     
