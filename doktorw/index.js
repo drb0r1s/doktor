@@ -3,14 +3,14 @@ import { DoktorWeb } from "./scripts/doktorWeb.js";
 const doktorWeb = new DoktorWeb();
 
 async function run() {
-    const compiledDoktorRuntime = await doktorWeb.compile();
-    await redraw(compiledDoktorRuntime);
+    const executedDoktorRuntime = await doktorWeb.begin();
+    await redraw(executedDoktorRuntime);
 
     doktorWeb.setupEvents();
 }
 
-export async function redraw(compiledDoktorRuntime) {
-    await doktorWeb.draw(compiledDoktorRuntime);
+export async function redraw(executedDoktorRuntime) {
+    await doktorWeb.draw(executedDoktorRuntime);
 }
 
 run();

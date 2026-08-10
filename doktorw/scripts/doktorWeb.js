@@ -8,7 +8,7 @@ export class DoktorWeb {
         this.doktorRuntime = null;
     }
 
-    async compile() {
+    async begin() {
         try {
             await init(); // Loads .wasm, has to be written first.
         
@@ -19,18 +19,18 @@ export class DoktorWeb {
             const imageMeasurements = await Measurer.images(bytes);
             
             this.doktorRuntime = new DoktorRuntime();
-            return this.doktorRuntime.compile(bytes, window.innerWidth, window.innerHeight, textMeasurements, imageMeasurements);
+            return this.doktorRuntime.execute(bytes, window.innerWidth, window.innerHeight, textMeasurements, imageMeasurements);
         }
 
         catch(error) { console.error(error) }
     }
 
-    async draw(compiledDoktorRuntime = null) {
+    async draw(executedDoktorRuntime = null) {
         try {
-            if(compiledDoktorRuntime === null) return;
+            if(executedDoktorRuntime === null) return;
 
-            const numericBuffer = compiledDoktorRuntime.numericBuffer();
-            const stringTable = compiledDoktorRuntime.stringTable();
+            const numericBuffer = executedDoktorRuntime.numericBuffer();
+            const stringTable = executedDoktorRuntime.stringTable();
             
             const drawStructuresCount = numericBuffer.length / 16;
                 

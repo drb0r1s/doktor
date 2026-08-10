@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use wasm_bindgen::prelude::*;
+use web_sys::console;
 
 use doktorc::frontend::resolver_ast::Overflow;
 
@@ -33,8 +34,8 @@ impl DoktorRuntime {
         }
     }
 
-    #[wasm_bindgen(js_name=compile)]
-    pub fn compile(&mut self, written_doktorb: &[u8], viewport_width: f32, viewport_height: f32, js_text_measurements: JsValue, js_image_measurements: JsValue) -> Result<ParsedDoktorb, JsValue> {
+    #[wasm_bindgen(js_name=execute)]
+    pub fn execute(&mut self, written_doktorb: &[u8], viewport_width: f32, viewport_height: f32, js_text_measurements: JsValue, js_image_measurements: JsValue) -> Result<ParsedDoktorb, JsValue> {
         self.viewport_width = viewport_width;
         self.viewport_height = viewport_height;
         

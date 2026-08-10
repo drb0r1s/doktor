@@ -52,8 +52,8 @@ export const Events = {
                 const { id, x, y } = pendingOffset;
                 pendingOffset = null;
 
-                const compiledDoktorRuntime = doktorRuntime.updateScrollOffset(id, x, y);
-                await redraw(compiledDoktorRuntime);
+                const executedDoktorRuntime = doktorRuntime.updateScrollOffset(id, x, y);
+                await redraw(executedDoktorRuntime);
             }
 
             requestAnimationFrame(tick);
