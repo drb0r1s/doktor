@@ -1,3 +1,10 @@
+use std::env;
+use std::fs;
+use std::process;
+use std::path::Path;
+
+use colored::Colorize;
+
 use doktorc::frontend::tokenizer::Tokenizer;
 use doktorc::frontend::parser::Parser;
 use doktorc::frontend::resolver::Resolver;
@@ -5,12 +12,6 @@ use doktorc::frontend::resolver::Resolver;
 use doktorc::backend::doktorb_writer::DoktorbWriter;
 
 use doktorc::data::prefix::get_prefix;
-
-use std::env;
-use std::fs;
-use std::process;
-
-use colored::Colorize;
 
 fn run(path: &str) -> Result<(), Box<dyn std::error::Error>> {
     let source = fs::read_to_string(path)?;
@@ -47,7 +48,8 @@ fn run(path: &str) -> Result<(), Box<dyn std::error::Error>> {
 
     println!("{} {} Resolver's AST has been serialized to DOKTOR Binary.", get_prefix(), "(Doktorb Writer)".magenta().italic());
 
-    println!("{} {} has been compiled to doktorc/out/compiled.doktorb.", get_prefix(), path);
+    let file_name: &str = Path::new(path).file_name().and_then(|name| name.to_str()).unwrap();
+    println!("{} {} has been compiled to doktorc/out/compiled.doktorb.", get_prefix(), file_name);
     
     Ok(())
 }
