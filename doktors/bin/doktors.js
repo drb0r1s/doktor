@@ -3,11 +3,13 @@
 const path = require("path");
 const { startServer } = require("../lib/server");
 
+const { PREFIX } = require("../data/prefix");
+
 async function main() {
     const [doktorFile] = process.argv.slice(2);
 
     if(!doktorFile) {
-        console.error("Usage: doktors <file.doktor>");
+        console.error(`${PREFIX} Usage: doktors <file.doktor>`);
         process.exit(1);
     }
 
@@ -15,6 +17,6 @@ async function main() {
 }
 
 main().catch(error => {
-    console.error(error.message ?? error);
+    console.error(`${PREFIX} ${error.message ?? error}`);
     process.exit(1);
 });
