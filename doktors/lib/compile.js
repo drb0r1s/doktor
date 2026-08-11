@@ -7,7 +7,7 @@ const { PREFIX } = require("../data/prefix");
 function compile(doktorFile) {
     return new Promise((resolve, reject) => {
         if(!fs.existsSync(DOKTORC_EXE)) {
-            reject(new Error(`${PREFIX} doktorc.exe not found at ${DOKTORC_EXE}. Run "doktor update" first.`));
+            reject(new Error(`doktorc.exe not found at ${DOKTORC_EXE}. Run "doktor update" first.`));
             return;
         }
 
@@ -20,7 +20,7 @@ function compile(doktorFile) {
 
         child.on("exit", code => {
             if(code === 0) resolve();
-            else reject(new Error(`${PREFIX} doktorc exited with code ${code}.`));
+            else reject(new Error(`doktorc exited with code ${code}.`));
         });
     });
 }
