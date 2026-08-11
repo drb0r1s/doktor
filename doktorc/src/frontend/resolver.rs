@@ -47,6 +47,8 @@ impl std::error::Error for ResolverError {}
 const SYSTEM_BLOCK_TYPES: &[&str] = &["Group", "Image", "Text", "Input", "Collection", "Styles", "Style"];
 const CHILDREN_BLOCK_TYPES: &[&str] = &["Group", "Collection", "Styles"];
 
+type CollectionMap = HashMap<String, ParserBlockNode>;
+
 pub struct Resolver {
     warnings: Vec<ResolverWarning>,
     errors: Vec<ResolverError>,
@@ -61,10 +63,94 @@ impl Resolver {
     }
 
     pub fn resolve(mut self, parser_doktor_node: ParserDoktorNode) -> (ResolverDoktorNode, Vec<ResolverWarning>, Vec<ResolverError>) {
-        let tag_styles = Self::collect_tag_styles(&parser_doktor_node.children);
-        let children = self.filter_style_blocks(parser_doktor_node.children.into_iter().filter(|child| child.block_type != "Styles").collect(), &tag_styles);
+        let tag_styles: HashMap<String, Vec<Style>> = Self::collect_tag_styles(&parser_doktor_node.children);
+        
+        let collections: CollectionMap = self.collect_collections(&parser_doktor_node.children);
+        let top_level_filtered: Vec<ParserBlockNode> = parser_doktor_node.children.into_iter().filter(|child| child.block_type != "Styles" && child.block_type != "Collection").collect();
+        let mut expansion_stack: Vec<String> = Vec::new();
+
+        let expanded = self.expand_collections(top_level_filtered, &collections, &mut expansion_stack);
+        
+        let children = self.filter_style_blocks(expanded, &tag_styles);
 
         (ResolverDoktorNode { children }, self.warnings, self.errors)
+    }
+
+    fn collect_collections(&mut self, children: &[ParserBlockNode]) -> CollectionMap {
+        let mut collections: CollectionMap = HashMap::new();
+
+        for block in children {
+            if block.block_type == "Collection" {
+                if block.tag.is_empty() {
+                    self.errors.push(ResolverError {
+                        message: format!("\"Collection\" block must have a tag, it is ignored otherwise"),
+                        line: block.line,
+                        column: block.column,
+                    });
+
+                    continue;
+                }
+
+                if block.children.len() > 1 {
+                    self.errors.push(ResolverError {
+                        message: format!("Collection \"{}\" must return exactly one top-level block, other blocks are ignored", block.tag),
+                        line: block.line,
+                        column: block.column,
+                    });
+                }
+
+                if !block.tag.chars().next().is_some_and(|character| character.is_uppercase()) {
+                    self.warnings.push(ResolverWarning {
+                        message: format!("It is recommended to start a \"Collection\" block \"{}\" with a capital letter", block.tag),
+                        line: block.line,
+                        column: block.column,
+                    });
+                }
+
+                if let Some(first_child) = block.children.first() {
+                    collections.insert(block.tag.clone(), first_child.clone());
+                }
+                
+                else {
+                    self.warnings.push(ResolverWarning {
+                        message: format!("Collection \"{}\" has no body, it is ignored", block.tag),
+                        line: block.line,
+                        column: block.column,
+                    });
+                }
+            }
+        }
+
+        collections
+    }
+
+    fn expand_collections(&mut self, children: Vec<ParserBlockNode>, collections: &CollectionMap, expansion_stack: &mut Vec<String>) -> Vec<ParserBlockNode> {
+        children.into_iter().map(|block| self.expand_block(block, collections, expansion_stack)).collect()
+    }
+
+    fn expand_block(&mut self, mut block: ParserBlockNode, collections: &CollectionMap, expansion_stack: &mut Vec<String>) -> ParserBlockNode {
+        if let Some(collection_body) = collections.get(&block.block_type) {
+            if expansion_stack.contains(&block.block_type) {
+                self.errors.push(ResolverError {
+                    message: format!("Cycle detected calling collection \"{}\", it is ignored.", block.block_type),
+                    line: block.line,
+                    column: block.column,
+                });
+
+                return block;
+            }
+
+            expansion_stack.push(block.block_type.clone());
+
+            let expanded_block = self.expand_block(collection_body.clone(), collections, expansion_stack);
+            expansion_stack.pop(); // Emptying the stack block by block.
+
+            return expanded_block;
+        }
+
+        block.children = self.expand_collections(block.children, collections, expansion_stack);
+
+        block
     }
 
     fn collect_tag_styles(children: &[ParserBlockNode]) -> HashMap<String, Vec<Style>> {
