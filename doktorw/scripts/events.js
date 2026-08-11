@@ -1,4 +1,4 @@
-import { redraw } from "../index.js";
+import { redraw } from "../doktorw.js";
 
 export const Events = {
     click: doktorRuntime => {
