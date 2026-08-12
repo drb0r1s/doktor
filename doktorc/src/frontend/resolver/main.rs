@@ -1,59 +1,26 @@
-use std::fmt;
 use std::collections::HashMap;
 
-use colored::Colorize;
-
 use crate::frontend::parser_ast::{Attribute, Style, ParserBlockNode, ParserDoktorNode};
+
 use crate::frontend::resolver::ast::system_attributes::SystemAttributes;
 use crate::frontend::resolver::ast::system_styles::{Layout, Direction, Alignment, BorderType, Overflow, SystemStyles};
-use crate::frontend::resolver::ast::collection::{ParamType, parse_param_type, Collection, CollectionMap};
+use crate::frontend::resolver::ast::collection::CollectionMap;
 use crate::frontend::resolver::ast::nodes::{ResolverBlockNode, ResolverDoktorNode};
+use crate::frontend::resolver::ast::invalids::{ResolverWarning, ResolverError};
+
+use crate::frontend::resolver::collections::Collections;
+use crate::frontend::resolver::styles::Styles;
+use crate::frontend::resolver::invalid_value_warning::invalid_value_warning;
 
 use crate::collections::rgb::RGB;
 use crate::collections::font::Font;
-
-use crate::data::prefix::get_prefix;
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct ResolverWarning {
-    pub message: String,
-    pub line: usize,
-    pub column: usize,
-}
-
-impl fmt::Display for ResolverWarning {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{} {} {} [{}:{}]: {}.",
-            get_prefix(), "(Resolver)".magenta().italic(), "Warning".on_yellow(), self.line, self.column, self.message
-        )
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct ResolverError {
-    pub message: String,
-    pub line: usize,
-    pub column: usize,
-}
-
-impl fmt::Display for ResolverError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{} {} {} [{}:{}]: {}.",
-            get_prefix(), "(Resolver)".magenta().italic(), "Error".on_red(), self.line, self.column, self.message
-        )
-    }
-}
-
-impl std::error::Error for ResolverError {}
 
 const SYSTEM_BLOCK_TYPES: &[&str] = &["Group", "Image", "Text", "Input", "Collection", "Styles", "Style"];
 const CHILDREN_BLOCK_TYPES: &[&str] = &["Group", "Collection", "Styles"];
 
 pub struct Resolver {
+    collections: Collections,
+    styles: Styles,
     warnings: Vec<ResolverWarning>,
     errors: Vec<ResolverError>,
 }
@@ -61,272 +28,33 @@ pub struct Resolver {
 impl Resolver {
     pub fn new() -> Self {
         Resolver {
+            collections: Collections::new(),
+            styles: Styles::new(),
             warnings: Vec::new(),
             errors: Vec::new(),
         }
     }
 
     pub fn resolve(mut self, parser_doktor_node: ParserDoktorNode) -> (ResolverDoktorNode, Vec<ResolverWarning>, Vec<ResolverError>) {
-        let tag_styles: HashMap<String, Vec<Style>> = Self::collect_tag_styles(&parser_doktor_node.children);
+        let tag_styles: HashMap<String, Vec<Style>> = Styles::collect_tag_styles(&parser_doktor_node.children);
         
-        let collections: CollectionMap = self.collect_collections(&parser_doktor_node.children);
+        let collections: CollectionMap = self.collections.collect(&parser_doktor_node.children);
+
         let top_level_filtered: Vec<ParserBlockNode> = parser_doktor_node.children.into_iter().filter(|child| child.block_type != "Styles" && child.block_type != "Collection").collect();
         let mut expansion_stack: Vec<String> = Vec::new();
 
-        let expanded = self.expand_collections(top_level_filtered, &collections, &mut expansion_stack);
+        let expanded = self.collections.expand(top_level_filtered, &collections, &mut expansion_stack);
         
-        let children = self.filter_style_blocks(expanded, &tag_styles);
+        let filtered_children = self.styles.filter_style_blocks(expanded);
+        let children = filtered_children.into_iter().map(|child| self.resolve_block(child, &tag_styles)).collect();
+
+        // We need to collect all the warnings and errors from sub-structs.
+        self.warnings.extend(std::mem::take(&mut self.collections.warnings));
+        self.warnings.extend(std::mem::take(&mut self.styles.warnings));
+
+        self.errors.extend(std::mem::take(&mut self.collections.errors));
 
         (ResolverDoktorNode { children }, self.warnings, self.errors)
-    }
-
-    fn collect_collections(&mut self, children: &[ParserBlockNode]) -> CollectionMap {
-        let mut collections: CollectionMap = HashMap::new();
-
-        for block in children {
-            if block.block_type == "Collection" {
-                if block.tag.is_empty() {
-                    self.errors.push(ResolverError {
-                        message: format!("\"Collection\" block must have a tag, it is ignored otherwise"),
-                        line: block.line,
-                        column: block.column,
-                    });
-
-                    continue;
-                }
-
-                if block.children.len() > 1 {
-                    self.errors.push(ResolverError {
-                        message: format!("Collection \"{}\" must return exactly one top-level block, other blocks are ignored", block.tag),
-                        line: block.line,
-                        column: block.column,
-                    });
-                }
-
-                if !block.tag.chars().next().is_some_and(|character| character.is_uppercase()) {
-                    self.warnings.push(ResolverWarning {
-                        message: format!("It is recommended to start a \"Collection\" block \"{}\" with a capital letter", block.tag),
-                        line: block.line,
-                        column: block.column,
-                    });
-                }
-
-                if let Some(first_child) = block.children.first() {
-                    let (attributes, styles) = self.parse_collection_params(block);
-
-                    let collection: Collection = Collection {
-                        body: first_child.clone(),
-                        attributes,
-                        styles,
-                    };
-
-                    collections.insert(block.tag.clone(), collection);
-                }
-                
-                else {
-                    self.warnings.push(ResolverWarning {
-                        message: format!("Collection \"{}\" has no body, it is ignored", block.tag),
-                        line: block.line,
-                        column: block.column,
-                    });
-                }
-            }
-        }
-
-        collections
-    }
-
-    fn parse_collection_params(&mut self, block: &ParserBlockNode) -> (HashMap<String, ParamType>, HashMap<String, ParamType>) {
-        let mut attributes: HashMap<String, ParamType> = HashMap::new();
-        let mut styles: HashMap<String, ParamType> = HashMap::new();
-
-        for attribute in &block.attributes {
-            match parse_param_type(&attribute.value) {
-                Some(param_type) => { attributes.insert(attribute.name.clone(), param_type); }
-                None => self.invalid_value_warning(&attribute.name, &attribute.value, attribute.line, attribute.column),
-            }
-        }
-
-        for style in &block.styles {
-            match parse_param_type(&style.value) {
-                Some(param_type) => { styles.insert(style.name.clone(), param_type); }
-                None => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
-            }
-        }
-
-        (attributes, styles)
-    }
-
-    fn expand_collections(&mut self, children: Vec<ParserBlockNode>, collections: &CollectionMap, expansion_stack: &mut Vec<String>) -> Vec<ParserBlockNode> {
-        children.into_iter().map(|block| self.expand_block(block, collections, expansion_stack)).collect()
-    }
-
-    fn expand_block(&mut self, mut block: ParserBlockNode, collections: &CollectionMap, expansion_stack: &mut Vec<String>) -> ParserBlockNode {
-        if let Some(collection) = collections.get(&block.block_type) {
-            if expansion_stack.contains(&block.block_type) {
-                self.errors.push(ResolverError {
-                    message: format!("Cycle detected calling collection \"{}\", it is ignored.", block.block_type),
-                    line: block.line,
-                    column: block.column,
-                });
-
-                return block;
-            }
-
-            let values = self.validate_value_types(&block, collection);
-
-            let mut substituted_body = collection.body.clone();
-            Self::substitute_block(&mut substituted_body, &values);
-
-            expansion_stack.push(block.block_type.clone());
-            let expanded = self.expand_block(substituted_body, collections, expansion_stack);
-            expansion_stack.pop();
-
-            return expanded;
-        }
-
-        block.children = self.expand_collections(block.children, collections, expansion_stack);
-
-        block
-    }
-
-    fn substitute_variables(text: &str, values: &HashMap<String, String>) -> String {
-        let mut result = String::new();
-        let mut characters = text.chars().peekable();
-
-        while let Some(character) = characters.next() {
-            if character == '*' {
-                let mut name = String::new();
-
-                while let Some(&next) = characters.peek() {
-                    if next.is_ascii_alphabetic() || next == '_' {
-                        name.push(next);
-                        characters.next();
-                    }
-                    
-                    else {
-                        break;
-                    }
-                }
-
-                if name.is_empty() {
-                    result.push('*'); // Stray '*' with no valid identifier after it, kept literally.
-                }
-                
-                else {
-                    result.push_str(values.get(&name).map(String::as_str).unwrap_or("NULL"));
-                }
-            }
-            
-            else {
-                result.push(character);
-            }
-        }
-
-        result
-    }
-
-    fn validate_value_types(&mut self, block: &ParserBlockNode, collection: &Collection) -> HashMap<String, String> {
-        let mut values: HashMap<String, String> = HashMap::new();
-
-        for attribute in &block.attributes {
-            match collection.attributes.get(&attribute.name) {
-                Some(param_type) => {
-                    if Self::value_matches_type(&attribute.value, *param_type) {
-                        values.insert(attribute.name.clone(), attribute.value.clone());
-                    }
-                    
-                    else {
-                        self.invalid_value_warning(&attribute.name, &attribute.value, attribute.line, attribute.column);
-                    }
-                }
-
-                None => self.invalid_value_warning(&attribute.name, &attribute.value, attribute.line, attribute.column),
-            }
-        }
-
-        for style in &block.styles {
-            match collection.styles.get(&style.name) {
-                Some(param_type) => {
-                    if Self::value_matches_type(&style.value, *param_type) {
-                        values.insert(style.name.clone(), style.value.clone());
-                    } else {
-                        self.invalid_value_warning(&style.name, &style.value, style.line, style.column);
-                    }
-                }
-
-                None => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
-            }
-        }
-
-        values
-    }
-
-    fn value_matches_type(value: &str, param_type: ParamType) -> bool {
-        match param_type {
-            ParamType::Text => true,
-            ParamType::Number => value.parse::<f32>().is_ok(),
-            ParamType::Bool => matches!(value, "true" | "false" | "1" | "0"),
-            ParamType::Color => RGB::hex_to_rgb(value).is_some(),
-        }
-    }
-
-    fn substitute_block(block: &mut ParserBlockNode, values: &HashMap<String, String>) {
-        for attribute in &mut block.attributes {
-            attribute.value = Self::substitute_variables(&attribute.value, values);
-        }
-
-        for style in &mut block.styles {
-            style.value = Self::substitute_variables(&style.value, values);
-        }
-
-        for child in &mut block.children {
-            Self::substitute_block(child, values);
-        }
-    }
-
-    fn collect_tag_styles(children: &[ParserBlockNode]) -> HashMap<String, Vec<Style>> {
-        let mut tag_styles: HashMap<String, Vec<Style>> = HashMap::new();
-
-        for block in children {
-            if block.block_type == "Styles" {
-                for style_block in &block.children {
-                    if style_block.block_type == "Style" && !style_block.tag.is_empty() {
-                        tag_styles.insert(style_block.tag.clone(), style_block.styles.clone());
-                    }
-                }
-            }
-        }
-
-        tag_styles
-    }
-
-    fn filter_style_blocks(&mut self, children: Vec<ParserBlockNode>, tag_styles: &HashMap<String, Vec<Style>>) -> Vec<ResolverBlockNode> {
-        children.into_iter().filter_map(|child| {
-            match child.block_type.as_str() {
-                "Styles" => {
-                    self.warnings.push(ResolverWarning {
-                        message: "\"Styles\" block is only valid at the top level of the document, it is ignored otherwise".to_string(),
-                        line: child.line,
-                        column: child.column,
-                    });
-
-                    None
-                }
-
-                "Style" => {
-                    self.warnings.push(ResolverWarning {
-                        message: "\"Style\" block is only valid as a child of a \"Styles\" block at the top level of the document, it is ignored otherwise".to_string(),
-                        line: child.line,
-                        column: child.column,
-                    });
-
-                    None
-                }
-
-                _ => Some(self.resolve_block(child, tag_styles))
-            }
-        }).collect()
     }
 
     fn resolve_block(&mut self, parser_block_node: ParserBlockNode, tag_styles: &HashMap<String, Vec<Style>>) -> ResolverBlockNode {        
@@ -365,7 +93,10 @@ impl Resolver {
 
             Vec::new()
         } else {
-            self.filter_style_blocks(parser_block_node.children, tag_styles)
+            let filtered_children = self.styles.filter_style_blocks(parser_block_node.children);
+            self.warnings.extend(std::mem::take(&mut self.styles.warnings));
+
+            filtered_children.into_iter().map(|child| self.resolve_block(child, &tag_styles)).collect()
         };
 
         ResolverBlockNode {
@@ -406,7 +137,7 @@ impl Resolver {
                 ("Input", "max_length") => {
                     match attribute.value.parse::<u32>() {
                         Ok(value) => system_attributes.max_length = Some(value),
-                        Err(_) => self.invalid_value_warning(&attribute.name, &attribute.value, attribute.line, attribute.column),
+                        Err(_) => self.warnings.push(invalid_value_warning(&attribute.name, &attribute.value, attribute.line, attribute.column)),
                     }
 
                     true
@@ -415,7 +146,7 @@ impl Resolver {
                 ("Input", "min_length") => {
                     match attribute.value.parse::<u32>() {
                         Ok(value) => system_attributes.min_length = Some(value),
-                        Err(_) => self.invalid_value_warning(&attribute.name, &attribute.value, attribute.line, attribute.column),
+                        Err(_) => self.warnings.push(invalid_value_warning(&attribute.name, &attribute.value, attribute.line, attribute.column)),
                     }
 
                     true
@@ -443,7 +174,7 @@ impl Resolver {
                     match style.value.as_str() {
                         "simple" => system_styles.layout = Layout::Simple,
                         "free" => system_styles.layout = Layout::Free,
-                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        _ => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -453,7 +184,7 @@ impl Resolver {
                     match style.value.as_str() {
                         "horizontal" => system_styles.direction = Direction::Horizontal,
                         "vertical" => system_styles.direction = Direction::Vertical,
-                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        _ => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -464,7 +195,7 @@ impl Resolver {
                         "start" => system_styles.alignment = Alignment::Start,
                         "center" => system_styles.alignment = Alignment::Center,
                         "end" => system_styles.alignment = Alignment::End,
-                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column)
+                        _ => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column))
                     }
 
                     true
@@ -475,7 +206,7 @@ impl Resolver {
                         "start" => system_styles.alignment_x = Some(Alignment::Start),
                         "center" => system_styles.alignment_x = Some(Alignment::Center),
                         "end" => system_styles.alignment_x = Some(Alignment::End),
-                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column)
+                        _ => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column))
                     }
 
                     true
@@ -486,7 +217,7 @@ impl Resolver {
                         "start" => system_styles.alignment_y = Some(Alignment::Start),
                         "center" => system_styles.alignment_y = Some(Alignment::Center),
                         "end" => system_styles.alignment_y = Some(Alignment::End),
-                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column)
+                        _ => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column))
                     }
 
                     true
@@ -500,12 +231,12 @@ impl Resolver {
                                 system_styles.width_percent = Some(value / 100.0)
                             },
                             
-                            Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                            Err(_) => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                         }
                     } else {
                         match style.value.parse::<f32>() {
                             Ok(value) => system_styles.width = value,
-                            Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                            Err(_) => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                         }
                     }
 
@@ -520,12 +251,12 @@ impl Resolver {
                                 system_styles.height_percent = Some(value / 100.0)
                             },
 
-                            Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                            Err(_) => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                         }
                     } else {
                         match style.value.parse::<f32>() {
                             Ok(value) => system_styles.height = value,
-                            Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                            Err(_) => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                         }
                     }
 
@@ -536,7 +267,7 @@ impl Resolver {
                     match style.value.as_str() {
                         "true" | "1" => system_styles.lock_dimensions = true,
                         "false" | "0" => system_styles.lock_dimensions = false,
-                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        _ => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -546,7 +277,7 @@ impl Resolver {
                     match style.value.as_str() {
                         "true" | "1" => system_styles.lock_width = Some(true),
                         "false" | "0" => system_styles.lock_width = Some(false),
-                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        _ => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -556,7 +287,7 @@ impl Resolver {
                     match style.value.as_str() {
                         "true" | "1" => system_styles.lock_height = Some(true),
                         "false" | "0" => system_styles.lock_height = Some(false),
-                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        _ => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -565,7 +296,7 @@ impl Resolver {
                 "position" => {
                     match style.value.parse::<f32>() {
                         Ok(value) => system_styles.position = value,
-                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        Err(_) => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -574,7 +305,7 @@ impl Resolver {
                 "position_x" => {
                     match style.value.parse::<f32>() {
                         Ok(value) => system_styles.position_x = Some(value),
-                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        Err(_) => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -583,7 +314,7 @@ impl Resolver {
                 "position_y" => {
                     match style.value.parse::<f32>() {
                         Ok(value) => system_styles.position_y = Some(value),
-                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        Err(_) => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -592,7 +323,7 @@ impl Resolver {
                 "content_color" => {
                     match RGB::hex_to_rgb(&style.value) {
                         Some(color) => system_styles.content_color = color,
-                        None => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        None => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -601,7 +332,7 @@ impl Resolver {
                 "content_size" => {
                     match style.value.parse::<f32>() {
                         Ok(value) => system_styles.content_size = value,
-                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        Err(_) => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -610,7 +341,7 @@ impl Resolver {
                 "content_font" => {
                     match Font::parse_font(&style.value) {
                         Some(font) => system_styles.content_font = font,
-                        None => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        None => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -619,7 +350,7 @@ impl Resolver {
                 "background_color" => {
                     match RGB::hex_to_rgb(&style.value) {
                         Some(color) => system_styles.background_color = color,
-                        None => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        None => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -628,7 +359,7 @@ impl Resolver {
                 "border_color" => {
                     match RGB::hex_to_rgb(&style.value) {
                         Some(color) => system_styles.border_color = color,
-                        None => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        None => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -637,7 +368,7 @@ impl Resolver {
                 "border_top_color" => {
                     match RGB::hex_to_rgb(&style.value) {
                         Some(color) => system_styles.border_top_color = Some(color),
-                        None => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        None => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -646,7 +377,7 @@ impl Resolver {
                 "border_bottom_color" => {
                     match RGB::hex_to_rgb(&style.value) {
                         Some(color) => system_styles.border_bottom_color = Some(color),
-                        None => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        None => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -655,7 +386,7 @@ impl Resolver {
                 "border_left_color" => {
                     match RGB::hex_to_rgb(&style.value) {
                         Some(color) => system_styles.border_left_color = Some(color),
-                        None => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        None => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -664,7 +395,7 @@ impl Resolver {
                 "border_right_color" => {
                     match RGB::hex_to_rgb(&style.value) {
                         Some(color) => system_styles.border_right_color = Some(color),
-                        None => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        None => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -673,7 +404,7 @@ impl Resolver {
                 "border_size" => {
                     match style.value.parse::<f32>() {
                         Ok(value) => system_styles.border_size = value,
-                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        Err(_) => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -682,7 +413,7 @@ impl Resolver {
                 "border_top_size" => {
                     match style.value.parse::<f32>() {
                         Ok(value) => system_styles.border_top_size = Some(value),
-                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        Err(_) => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -691,7 +422,7 @@ impl Resolver {
                 "border_bottom_size" => {
                     match style.value.parse::<f32>() {
                         Ok(value) => system_styles.border_bottom_size = Some(value),
-                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        Err(_) => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -700,7 +431,7 @@ impl Resolver {
                 "border_left_size" => {
                     match style.value.parse::<f32>() {
                         Ok(value) => system_styles.border_left_size = Some(value),
-                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        Err(_) => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -709,7 +440,7 @@ impl Resolver {
                 "border_right_size" => {
                     match style.value.parse::<f32>() {
                         Ok(value) => system_styles.border_right_size = Some(value),
-                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        Err(_) => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -721,7 +452,7 @@ impl Resolver {
                         "solid" => system_styles.border_type = BorderType::Solid,
                         "dashed" => system_styles.border_type = BorderType::Dashed,
                         "dotted" => system_styles.border_type = BorderType::Dotted,
-                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column)
+                        _ => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column))
                     }
 
                     true
@@ -733,7 +464,7 @@ impl Resolver {
                         "solid" => system_styles.border_top_type = Some(BorderType::Solid),
                         "dashed" => system_styles.border_top_type = Some(BorderType::Dashed),
                         "dotted" => system_styles.border_top_type = Some(BorderType::Dotted),
-                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column)
+                        _ => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column))
                     }
 
                     true
@@ -745,7 +476,7 @@ impl Resolver {
                         "solid" => system_styles.border_bottom_type = Some(BorderType::Solid),
                         "dashed" => system_styles.border_bottom_type = Some(BorderType::Dashed),
                         "dotted" => system_styles.border_bottom_type = Some(BorderType::Dotted),
-                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column)
+                        _ => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column))
                     }
 
                     true
@@ -757,7 +488,7 @@ impl Resolver {
                         "solid" => system_styles.border_left_type = Some(BorderType::Solid),
                         "dashed" => system_styles.border_left_type = Some(BorderType::Dashed),
                         "dotted" => system_styles.border_left_type = Some(BorderType::Dotted),
-                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column)
+                        _ => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column))
                     }
 
                     true
@@ -769,7 +500,7 @@ impl Resolver {
                         "solid" => system_styles.border_right_type = Some(BorderType::Solid),
                         "dashed" => system_styles.border_right_type = Some(BorderType::Dashed),
                         "dotted" => system_styles.border_right_type = Some(BorderType::Dotted),
-                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column)
+                        _ => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column))
                     }
 
                     true
@@ -778,7 +509,7 @@ impl Resolver {
                 "opacity" => {
                     match style.value.parse::<f32>() {
                         Ok(value) => system_styles.opacity = value,
-                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        Err(_) => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -787,7 +518,7 @@ impl Resolver {
                 "spacing" => {
                     match style.value.parse::<f32>() {
                         Ok(value) => system_styles.spacing = value,
-                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        Err(_) => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -796,7 +527,7 @@ impl Resolver {
                 "spacing_top" => {
                     match style.value.parse::<f32>() {
                         Ok(value) => system_styles.spacing_top = Some(value),
-                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        Err(_) => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -805,7 +536,7 @@ impl Resolver {
                 "spacing_bottom" => {
                     match style.value.parse::<f32>() {
                         Ok(value) => system_styles.spacing_bottom = Some(value),
-                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        Err(_) => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -814,7 +545,7 @@ impl Resolver {
                 "spacing_left" => {
                     match style.value.parse::<f32>() {
                         Ok(value) => system_styles.spacing_left = Some(value),
-                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        Err(_) => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -823,7 +554,7 @@ impl Resolver {
                 "spacing_right" => {
                     match style.value.parse::<f32>() {
                         Ok(value) => system_styles.spacing_right = Some(value),
-                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        Err(_) => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -832,7 +563,7 @@ impl Resolver {
                 "margin" => {
                     match style.value.parse::<f32>() {
                         Ok(value) => system_styles.margin = Some(value),
-                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        Err(_) => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -841,7 +572,7 @@ impl Resolver {
                 "margin_top" => {
                     match style.value.parse::<f32>() {
                         Ok(value) => system_styles.margin_top = Some(value),
-                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        Err(_) => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -850,7 +581,7 @@ impl Resolver {
                 "margin_bottom" => {
                     match style.value.parse::<f32>() {
                         Ok(value) => system_styles.margin_bottom = Some(value),
-                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        Err(_) => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -859,7 +590,7 @@ impl Resolver {
                 "margin_left" => {
                     match style.value.parse::<f32>() {
                         Ok(value) => system_styles.margin_left = Some(value),
-                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        Err(_) => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -868,7 +599,7 @@ impl Resolver {
                 "margin_right" => {
                     match style.value.parse::<f32>() {
                         Ok(value) => system_styles.margin_right = Some(value),
-                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        Err(_) => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -877,7 +608,7 @@ impl Resolver {
                 "padding" => {
                     match style.value.parse::<f32>() {
                         Ok(value) => system_styles.padding = Some(value),
-                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        Err(_) => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -886,7 +617,7 @@ impl Resolver {
                 "padding_top" => {
                     match style.value.parse::<f32>() {
                         Ok(value) => system_styles.padding_top = Some(value),
-                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        Err(_) => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -895,7 +626,7 @@ impl Resolver {
                 "padding_bottom" => {
                     match style.value.parse::<f32>() {
                         Ok(value) => system_styles.padding_bottom = Some(value),
-                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        Err(_) => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -904,7 +635,7 @@ impl Resolver {
                 "padding_left" => {
                     match style.value.parse::<f32>() {
                         Ok(value) => system_styles.padding_left = Some(value),
-                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        Err(_) => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -913,7 +644,7 @@ impl Resolver {
                 "padding_right" => {
                     match style.value.parse::<f32>() {
                         Ok(value) => system_styles.padding_right = Some(value),
-                        Err(_) => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        Err(_) => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -924,7 +655,7 @@ impl Resolver {
                         "true" | "1" => system_styles.overflow = Overflow::True,
                         "false" | "0" => system_styles.overflow = Overflow::False,
                         "scroll" => system_styles.overflow = Overflow::Scroll,
-                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        _ => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -935,7 +666,7 @@ impl Resolver {
                         "true" | "1" => system_styles.overflow_x = Some(Overflow::True),
                         "false" | "0" => system_styles.overflow_x = Some(Overflow::False),
                         "scroll" => system_styles.overflow_x = Some(Overflow::Scroll),
-                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        _ => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -946,7 +677,7 @@ impl Resolver {
                         "true" | "1" => system_styles.overflow_y = Some(Overflow::True),
                         "false" | "0" => system_styles.overflow_y = Some(Overflow::False),
                         "scroll" => system_styles.overflow_y = Some(Overflow::Scroll),
-                        _ => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+                        _ => self.warnings.push(invalid_value_warning(&style.name, &style.value, style.line, style.column)),
                     }
 
                     true
@@ -963,14 +694,5 @@ impl Resolver {
         (system_styles, arbitrary_styles)
     }
 
-    fn invalid_value_warning(&mut self, name: &str, value: &str, line: usize, column: usize) {
-        self.warnings.push(ResolverWarning {
-            message: format!(
-                "\"{}\" has an invalid value \"{}\" and has been ignored",
-                name, value
-            ),
-            line,
-            column,
-        });
-    }
+    
 }
