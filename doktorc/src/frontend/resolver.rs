@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use colored::Colorize;
 
 use crate::frontend::parser_ast::{Attribute, Style, ParserBlockNode, ParserDoktorNode};
-use crate::frontend::resolver_ast::{RGB, Layout, Direction, Alignment, parse_font, BorderType, Overflow, SystemAttributes, SystemStyles, ResolverBlockNode, ResolverDoktorNode};
+use crate::frontend::resolver_ast::{RGB, Layout, Direction, Alignment, parse_font, BorderType, Overflow, ParamType, parse_param_type, Collection, CollectionMap, SystemAttributes, SystemStyles, ResolverBlockNode, ResolverDoktorNode};
 
 use crate::data::prefix::get_prefix;
 
@@ -46,8 +46,6 @@ impl std::error::Error for ResolverError {}
 
 const SYSTEM_BLOCK_TYPES: &[&str] = &["Group", "Image", "Text", "Input", "Collection", "Styles", "Style"];
 const CHILDREN_BLOCK_TYPES: &[&str] = &["Group", "Collection", "Styles"];
-
-type CollectionMap = HashMap<String, ParserBlockNode>;
 
 pub struct Resolver {
     warnings: Vec<ResolverWarning>,
@@ -108,7 +106,15 @@ impl Resolver {
                 }
 
                 if let Some(first_child) = block.children.first() {
-                    collections.insert(block.tag.clone(), first_child.clone());
+                    let (attributes, styles) = self.parse_collection_params(block);
+
+                    let collection: Collection = Collection {
+                        body: first_child.clone(),
+                        attributes,
+                        styles,
+                    };
+
+                    collections.insert(block.tag.clone(), collection);
                 }
                 
                 else {
@@ -124,12 +130,33 @@ impl Resolver {
         collections
     }
 
+    fn parse_collection_params(&mut self, block: &ParserBlockNode) -> (HashMap<String, ParamType>, HashMap<String, ParamType>) {
+        let mut attributes: HashMap<String, ParamType> = HashMap::new();
+        let mut styles: HashMap<String, ParamType> = HashMap::new();
+
+        for attribute in &block.attributes {
+            match parse_param_type(&attribute.value) {
+                Some(param_type) => { attributes.insert(attribute.name.clone(), param_type); }
+                None => self.invalid_value_warning(&attribute.name, &attribute.value, attribute.line, attribute.column),
+            }
+        }
+
+        for style in &block.styles {
+            match parse_param_type(&style.value) {
+                Some(param_type) => { styles.insert(style.name.clone(), param_type); }
+                None => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+            }
+        }
+
+        (attributes, styles)
+    }
+
     fn expand_collections(&mut self, children: Vec<ParserBlockNode>, collections: &CollectionMap, expansion_stack: &mut Vec<String>) -> Vec<ParserBlockNode> {
         children.into_iter().map(|block| self.expand_block(block, collections, expansion_stack)).collect()
     }
 
     fn expand_block(&mut self, mut block: ParserBlockNode, collections: &CollectionMap, expansion_stack: &mut Vec<String>) -> ParserBlockNode {
-        if let Some(collection_body) = collections.get(&block.block_type) {
+        if let Some(collection) = collections.get(&block.block_type) {
             if expansion_stack.contains(&block.block_type) {
                 self.errors.push(ResolverError {
                     message: format!("Cycle detected calling collection \"{}\", it is ignored.", block.block_type),
@@ -140,17 +167,116 @@ impl Resolver {
                 return block;
             }
 
+            let values = self.validate_value_types(&block, collection);
+
+            let mut substituted_body = collection.body.clone();
+            Self::substitute_block(&mut substituted_body, &values);
+
             expansion_stack.push(block.block_type.clone());
+            let expanded = self.expand_block(substituted_body, collections, expansion_stack);
+            expansion_stack.pop();
 
-            let expanded_block = self.expand_block(collection_body.clone(), collections, expansion_stack);
-            expansion_stack.pop(); // Emptying the stack block by block.
-
-            return expanded_block;
+            return expanded;
         }
 
         block.children = self.expand_collections(block.children, collections, expansion_stack);
 
         block
+    }
+
+    fn substitute_variables(text: &str, values: &HashMap<String, String>) -> String {
+        let mut result = String::new();
+        let mut characters = text.chars().peekable();
+
+        while let Some(character) = characters.next() {
+            if character == '*' {
+                let mut name = String::new();
+
+                while let Some(&next) = characters.peek() {
+                    if next.is_ascii_alphabetic() || next == '_' {
+                        name.push(next);
+                        characters.next();
+                    }
+                    
+                    else {
+                        break;
+                    }
+                }
+
+                if name.is_empty() {
+                    result.push('*'); // Stray '*' with no valid identifier after it, kept literally.
+                }
+                
+                else {
+                    result.push_str(values.get(&name).map(String::as_str).unwrap_or("NULL"));
+                }
+            }
+            
+            else {
+                result.push(character);
+            }
+        }
+
+        result
+    }
+
+    fn validate_value_types(&mut self, block: &ParserBlockNode, collection: &Collection) -> HashMap<String, String> {
+        let mut values: HashMap<String, String> = HashMap::new();
+
+        for attribute in &block.attributes {
+            match collection.attributes.get(&attribute.name) {
+                Some(param_type) => {
+                    if Self::value_matches_type(&attribute.value, *param_type) {
+                        values.insert(attribute.name.clone(), attribute.value.clone());
+                    }
+                    
+                    else {
+                        self.invalid_value_warning(&attribute.name, &attribute.value, attribute.line, attribute.column);
+                    }
+                }
+
+                None => self.invalid_value_warning(&attribute.name, &attribute.value, attribute.line, attribute.column),
+            }
+        }
+
+        for style in &block.styles {
+            match collection.styles.get(&style.name) {
+                Some(param_type) => {
+                    if Self::value_matches_type(&style.value, *param_type) {
+                        values.insert(style.name.clone(), style.value.clone());
+                    } else {
+                        self.invalid_value_warning(&style.name, &style.value, style.line, style.column);
+                    }
+                }
+
+                None => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
+            }
+        }
+
+        values
+    }
+
+    fn value_matches_type(value: &str, param_type: ParamType) -> bool {
+        match param_type {
+            ParamType::Text => true,
+            ParamType::Number => value.parse::<f32>().is_ok(),
+            ParamType::Bool => matches!(value, "true" | "false" | "1" | "0"),
+            ParamType::Color => Self::hex_to_rgb(value).is_some(),
+        }
+    }
+
+    fn substitute_block(block: &mut ParserBlockNode, values: &HashMap<String, String>) {
+        for attribute in &mut block.attributes {
+            attribute.value = Self::substitute_variables(&attribute.value, values);
+        }
+
+        for style in &mut block.styles {
+            style.value = Self::substitute_variables(&style.value, values);
+        }
+
+        for child in &mut block.children {
+            Self::substitute_block(child, values);
+        }
     }
 
     fn collect_tag_styles(children: &[ParserBlockNode]) -> HashMap<String, Vec<Style>> {
