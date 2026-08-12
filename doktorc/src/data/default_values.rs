@@ -1,4 +1,7 @@
-use crate::frontend::resolver_ast::{RGB, Layout, Direction, Alignment, Font, BorderType, Overflow};
+use crate::frontend::resolver::ast::system_styles::{Layout, Direction, Alignment, BorderType, Overflow};
+
+use crate::collections::rgb::RGB;
+use crate::collections::font::Font;
 
 pub const DEFAULT_LAYOUT: Layout = Layout::Simple;
 pub const DEFAULT_DIRECTION: Direction = Direction::Horizontal;

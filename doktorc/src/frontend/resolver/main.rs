@@ -4,7 +4,13 @@ use std::collections::HashMap;
 use colored::Colorize;
 
 use crate::frontend::parser_ast::{Attribute, Style, ParserBlockNode, ParserDoktorNode};
-use crate::frontend::resolver_ast::{RGB, Layout, Direction, Alignment, parse_font, BorderType, Overflow, ParamType, parse_param_type, Collection, CollectionMap, SystemAttributes, SystemStyles, ResolverBlockNode, ResolverDoktorNode};
+use crate::frontend::resolver::ast::system_attributes::SystemAttributes;
+use crate::frontend::resolver::ast::system_styles::{Layout, Direction, Alignment, BorderType, Overflow, SystemStyles};
+use crate::frontend::resolver::ast::collection::{ParamType, parse_param_type, Collection, CollectionMap};
+use crate::frontend::resolver::ast::nodes::{ResolverBlockNode, ResolverDoktorNode};
+
+use crate::collections::rgb::RGB;
+use crate::collections::font::Font;
 
 use crate::data::prefix::get_prefix;
 
@@ -261,7 +267,7 @@ impl Resolver {
             ParamType::Text => true,
             ParamType::Number => value.parse::<f32>().is_ok(),
             ParamType::Bool => matches!(value, "true" | "false" | "1" | "0"),
-            ParamType::Color => Self::hex_to_rgb(value).is_some(),
+            ParamType::Color => RGB::hex_to_rgb(value).is_some(),
         }
     }
 
@@ -584,7 +590,7 @@ impl Resolver {
                 }
 
                 "content_color" => {
-                    match Self::hex_to_rgb(&style.value) {
+                    match RGB::hex_to_rgb(&style.value) {
                         Some(color) => system_styles.content_color = color,
                         None => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
                     }
@@ -602,7 +608,7 @@ impl Resolver {
                 }
 
                 "content_font" => {
-                    match parse_font(&style.value) {
+                    match Font::parse_font(&style.value) {
                         Some(font) => system_styles.content_font = font,
                         None => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
                     }
@@ -611,7 +617,7 @@ impl Resolver {
                 }
 
                 "background_color" => {
-                    match Self::hex_to_rgb(&style.value) {
+                    match RGB::hex_to_rgb(&style.value) {
                         Some(color) => system_styles.background_color = color,
                         None => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
                     }
@@ -620,7 +626,7 @@ impl Resolver {
                 }
 
                 "border_color" => {
-                    match Self::hex_to_rgb(&style.value) {
+                    match RGB::hex_to_rgb(&style.value) {
                         Some(color) => system_styles.border_color = color,
                         None => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
                     }
@@ -629,7 +635,7 @@ impl Resolver {
                 }
 
                 "border_top_color" => {
-                    match Self::hex_to_rgb(&style.value) {
+                    match RGB::hex_to_rgb(&style.value) {
                         Some(color) => system_styles.border_top_color = Some(color),
                         None => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
                     }
@@ -638,7 +644,7 @@ impl Resolver {
                 }
 
                 "border_bottom_color" => {
-                    match Self::hex_to_rgb(&style.value) {
+                    match RGB::hex_to_rgb(&style.value) {
                         Some(color) => system_styles.border_bottom_color = Some(color),
                         None => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
                     }
@@ -647,7 +653,7 @@ impl Resolver {
                 }
 
                 "border_left_color" => {
-                    match Self::hex_to_rgb(&style.value) {
+                    match RGB::hex_to_rgb(&style.value) {
                         Some(color) => system_styles.border_left_color = Some(color),
                         None => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
                     }
@@ -656,7 +662,7 @@ impl Resolver {
                 }
 
                 "border_right_color" => {
-                    match Self::hex_to_rgb(&style.value) {
+                    match RGB::hex_to_rgb(&style.value) {
                         Some(color) => system_styles.border_right_color = Some(color),
                         None => self.invalid_value_warning(&style.name, &style.value, style.line, style.column),
                     }
@@ -955,35 +961,6 @@ impl Resolver {
         }
 
         (system_styles, arbitrary_styles)
-    }
-
-    fn hex_to_rgb(value: &str) -> Option<RGB> {
-        let hex = value.strip_prefix('#')?;
-
-        if !hex.chars().all(|c| c.is_ascii_hexdigit()) {
-            return None;
-        }
-
-        match hex.len() {
-            6 => {
-                let r = u8::from_str_radix(&hex[0..2], 16).ok()?;
-                let g = u8::from_str_radix(&hex[2..4], 16).ok()?;
-                let b = u8::from_str_radix(&hex[4..6], 16).ok()?;
-
-                Some(RGB { r, g, b, a: 255 })
-            }
-
-            8 => {
-                let r = u8::from_str_radix(&hex[0..2], 16).ok()?;
-                let g = u8::from_str_radix(&hex[2..4], 16).ok()?;
-                let b = u8::from_str_radix(&hex[4..6], 16).ok()?;
-                let a = u8::from_str_radix(&hex[6..8], 16).ok()?;
-
-                Some(RGB { r, g, b, a })
-            }
-
-            _ => None
-        }
     }
 
     fn invalid_value_warning(&mut self, name: &str, value: &str, line: usize, column: usize) {

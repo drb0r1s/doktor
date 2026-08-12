@@ -1,7 +1,6 @@
-use crate::frontend::resolver_ast::RGB;
-
 use crate::middleend::painter_ast::{Rectangle, Text, Image, DrawStructure};
 
+use crate::collections::rgb::RGB;
 use crate::data::packet_structure;
 
 pub struct PackedPackets {

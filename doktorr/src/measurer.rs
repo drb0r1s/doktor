@@ -1,7 +1,9 @@
 use wasm_bindgen::prelude::*;
 use serde::Serialize;
 
-use doktorc::frontend::resolver_ast::{Font, ResolverBlockNode, ResolverDoktorNode};
+use doktorc::frontend::resolver::ast::nodes::{ResolverBlockNode, ResolverDoktorNode};
+
+use doktorc::collections::font::Font;
 
 // TEXT
 

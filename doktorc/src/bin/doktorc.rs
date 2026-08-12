@@ -7,7 +7,7 @@ use colored::Colorize;
 
 use doktorc::frontend::tokenizer::Tokenizer;
 use doktorc::frontend::parser::Parser;
-use doktorc::frontend::resolver::Resolver;
+use doktorc::frontend::resolver::main::Resolver;
 
 use doktorc::backend::doktorb_writer::DoktorbWriter;
 

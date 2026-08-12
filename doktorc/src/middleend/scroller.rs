@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::frontend::resolver_ast::Overflow;
+use crate::frontend::resolver::ast::system_styles::Overflow;
 
 use crate::middleend::shaper_ast::{Location, Size, Clip, ShaperBlockNode, ShaperDoktorNode};
 use crate::middleend::scroller_ast::{ScrollerBlockNode, ScrollerDoktorNode};

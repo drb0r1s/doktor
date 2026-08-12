@@ -1,6 +1,7 @@
 use serde::{Serialize, Deserialize};
 
-use crate::frontend::resolver_ast::{SystemAttributes, SystemStyles};
+use crate::frontend::resolver::ast::system_attributes::SystemAttributes;
+use crate::frontend::resolver::ast::system_styles::SystemStyles;
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct Size {

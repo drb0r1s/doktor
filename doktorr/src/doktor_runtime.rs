@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
 use web_sys::console;
 
-use doktorc::frontend::resolver_ast::Overflow;
+use doktorc::frontend::resolver::ast::system_styles::Overflow;
 
 use doktorc::middleend::shaper_ast::{Location, Clip, TextMeasurement, ImageMeasurement, ShaperBlockNode, ShaperDoktorNode};
 use doktorc::middleend::shaper::Shaper;

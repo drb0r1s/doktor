@@ -2,7 +2,7 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
-use crate::frontend::resolver_ast::ResolverDoktorNode;
+use crate::frontend::resolver::ast::nodes::ResolverDoktorNode;
 
 pub struct DoktorbWriter;
 

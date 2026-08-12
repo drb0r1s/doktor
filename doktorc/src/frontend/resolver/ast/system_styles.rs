@@ -1,17 +1,9 @@
 use serde::{Serialize, Deserialize};
-use std::collections::HashMap;
 
-use crate::frontend::parser_ast::ParserBlockNode;
+use crate::collections::rgb::RGB;
+use crate::collections::font::Font;
 
 use crate::data::default_values;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub struct RGB {
-    pub r: u8,
-    pub g: u8,
-    pub b: u8,
-    pub a: u8,
-}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Layout {
@@ -33,47 +25,6 @@ pub enum Alignment {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum Font {
-    Arial = 0,
-    Helvetica = 1,
-    Verdana = 2,
-    Tahoma = 3,
-    TrebuchetMS = 4,
-    SegoeUI = 5,
-    Georgia = 6,
-    TimesNewRoman = 7,
-    Garamond = 8,
-    Baskerville = 9,
-    CourierNew = 10,
-    Consolas = 11,
-    SansSerif = 12,
-    Serif = 13,
-    Monospace = 14,
-}
-
-const FONT_NAMES: &[(&str, Font)] = &[
-    ("arial", Font::Arial),
-    ("helvetica", Font::Helvetica),
-    ("verdana", Font::Verdana),
-    ("tahoma", Font::Tahoma),
-    ("trebuchet_ms", Font::TrebuchetMS),
-    ("segoe_ui", Font::SegoeUI),
-    ("georgia", Font::Georgia),
-    ("times_new_roman", Font::TimesNewRoman),
-    ("garamond", Font::Garamond),
-    ("baskerville", Font::Baskerville),
-    ("courier_new", Font::CourierNew),
-    ("consolas", Font::Consolas),
-    ("sans_serif", Font::SansSerif),
-    ("serif", Font::Serif),
-    ("monospace", Font::Monospace),
-];
-
-pub fn parse_font(value: &str) -> Option<Font> {
-    FONT_NAMES.iter().find(|(name, _)| *name == value).map(|(_, font)| *font)
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum BorderType {
     None = 0,
     Solid = 1,
@@ -86,44 +37,6 @@ pub enum Overflow {
     False = 0,
     True = 1,
     Scroll = 2,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum ParamType {
-    Text,
-    Number,
-    Bool,
-    Color,
-}
-
-pub fn parse_param_type(value: &str) -> Option<ParamType> {
-    match value {
-        "text" => Some(ParamType::Text),
-        "number" => Some(ParamType::Number),
-        "bool" => Some(ParamType::Bool),
-        "color" => Some(ParamType::Color),
-        _ => None,
-    }
-}
-
-pub struct Collection {
-    pub body: ParserBlockNode,
-    pub attributes: HashMap<String, ParamType>,
-    pub styles: HashMap<String, ParamType>,
-}
-
-pub type CollectionMap = HashMap<String, Collection>;
-
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct SystemAttributes {
-    // Image
-    pub source: Option<String>,
-    // Text
-    pub content: Option<String>,
-    // Input
-    pub placeholder: Option<String>,
-    pub max_length: Option<u32>,
-    pub min_length: Option<u32>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -324,23 +237,4 @@ impl SystemStyles {
             _ => default_values::DEFAULT_OVERFLOW,
         }
     }
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct ResolverBlockNode {
-    pub id: u32,
-    pub block_type: String,
-    pub tag: String,
-    pub system_attributes: SystemAttributes,
-    pub arbitrary_attributes: Vec<(String, String)>,
-    pub system_styles: SystemStyles,
-    pub arbitrary_styles: Vec<(String, String)>,
-    pub children: Vec<ResolverBlockNode>,
-    pub line: usize,
-    pub column: usize,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct ResolverDoktorNode {
-    pub children: Vec<ResolverBlockNode>,
 }

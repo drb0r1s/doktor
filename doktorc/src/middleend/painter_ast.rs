@@ -1,6 +1,9 @@
-use crate::frontend::resolver_ast::{RGB, Font, BorderType};
+use crate::frontend::resolver::ast::system_styles::BorderType;
 
 use crate::middleend::shaper_ast::{Location, Clip};
+
+use crate::collections::rgb::RGB;
+use crate::collections::font::Font;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Rectangle {

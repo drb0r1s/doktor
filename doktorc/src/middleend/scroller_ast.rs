@@ -1,6 +1,8 @@
 use serde::{Serialize, Deserialize};
 
-use crate::frontend::resolver_ast::{SystemAttributes, SystemStyles};
+use crate::frontend::resolver::ast::system_attributes::SystemAttributes;
+use crate::frontend::resolver::ast::system_styles::SystemStyles;
+
 use crate::middleend::shaper_ast::{Size, Location, Clip};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

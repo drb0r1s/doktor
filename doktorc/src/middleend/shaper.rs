@@ -1,4 +1,5 @@
-use crate::frontend::resolver_ast::{SystemStyles, Alignment, Direction, Layout, Overflow, ResolverBlockNode, ResolverDoktorNode};
+use crate::frontend::resolver::ast::system_styles::{Layout, Direction, Alignment, Overflow, SystemStyles};
+use crate::frontend::resolver::ast::nodes::{ResolverBlockNode, ResolverDoktorNode};
 
 use crate::middleend::shaper_ast::{Size, Location, Clip, TextMeasurement, ImageMeasurement, ShaperBlockNode, ShaperDoktorNode};
 
