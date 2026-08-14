@@ -1,3 +1,5 @@
+use uuid::Uuid;
+
 use crate::frontend::resolver::ast::system_styles::BorderType;
 
 use crate::middleend::shaper_ast::{Location, Clip};
@@ -7,7 +9,7 @@ use crate::collections::font::Font;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Rectangle {
-    pub id: u32,
+    pub id: Uuid,
     pub location: Location,
     pub width: f32,
     pub height: f32,
@@ -35,7 +37,7 @@ pub struct Rectangle {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Text {
-    pub id: u32,
+    pub id: Uuid,
     pub location: Location,
     pub clip: Clip,
     pub content: String,
@@ -60,7 +62,7 @@ pub struct Text {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Image {
-    pub id: u32,
+    pub id: Uuid,
     pub location: Location,
     pub width: f32,
     pub height: f32,

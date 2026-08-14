@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use uuid::Uuid;
 
 use crate::frontend::resolver::ast::system_styles::Overflow;
 
@@ -12,13 +13,13 @@ impl Scroller {
         Scroller
     }
     
-    pub fn scroll(&self, shaper_doktor_node: &ShaperDoktorNode, viewport_clip: Clip, scroll_offsets: &HashMap<u32, Location>) -> ScrollerDoktorNode {
+    pub fn scroll(&self, shaper_doktor_node: &ShaperDoktorNode, viewport_clip: Clip, scroll_offsets: &HashMap<Uuid, Location>) -> ScrollerDoktorNode {
         let children: Vec<ScrollerBlockNode> = shaper_doktor_node.children.iter().map(|child| Self::block_scroll(child, Location { x: 0.0, y: 0.0 }, viewport_clip, scroll_offsets)).collect();
 
         ScrollerDoktorNode { children }
     }
 
-    fn block_scroll(shaper_block_node: &ShaperBlockNode, inherited_offset: Location, inherited_clip: Clip, scroll_offsets: &HashMap<u32, Location>) -> ScrollerBlockNode {
+    fn block_scroll(shaper_block_node: &ShaperBlockNode, inherited_offset: Location, inherited_clip: Clip, scroll_offsets: &HashMap<Uuid, Location>) -> ScrollerBlockNode {
         // Applying any offset that block has inherited from its ancestors.
         let location: Location = Location {
             x: shaper_block_node.location.x - inherited_offset.x,

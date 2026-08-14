@@ -1,4 +1,5 @@
 use std::fmt;
+use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Attribute {
@@ -18,7 +19,7 @@ pub struct Style {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ParserBlockNode {
-    pub id: u32,
+    pub id: Uuid,
     pub block_type: String,
     pub tag: String,
     pub attributes: Vec<Attribute>,

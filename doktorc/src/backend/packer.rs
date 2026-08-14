@@ -39,8 +39,6 @@ impl Packer {
     fn pack_rectangle(rectangle: &Rectangle, row: &mut [f32]) {
         row[packet_structure::PACKET_TYPE] = packet_structure::PACKET_RECTANGLE_TYPE;
 
-        row[packet_structure::PACKET_ID] = rectangle.id as f32;
-
         row[packet_structure::PACKET_X] = rectangle.location.x;
         row[packet_structure::PACKET_Y] = rectangle.location.y;
 
@@ -92,8 +90,6 @@ impl Packer {
 
         row[packet_structure::PACKET_TYPE] = packet_structure::PACKET_TEXT_TYPE;
 
-        row[packet_structure::PACKET_ID] = text.id as f32;
-
         row[packet_structure::PACKET_X] = text.location.x;
         row[packet_structure::PACKET_Y] = text.location.y;
 
@@ -140,8 +136,6 @@ impl Packer {
         let (offset, length): (usize, usize) = Self::push_string(string_table, &image.source);
 
         row[packet_structure::PACKET_TYPE] = packet_structure::PACKET_IMAGE_TYPE;
-
-        row[packet_structure::PACKET_ID] = image.id as f32;
 
         row[packet_structure::PACKET_X] = image.location.x;
         row[packet_structure::PACKET_Y] = image.location.y;

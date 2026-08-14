@@ -1,4 +1,5 @@
 use serde::{Serialize, Deserialize};
+use uuid::Uuid;
 
 use crate::frontend::resolver::ast::system_attributes::SystemAttributes;
 use crate::frontend::resolver::ast::system_styles::SystemStyles;
@@ -7,7 +8,7 @@ use crate::middleend::shaper_ast::{Size, Location, Clip};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ScrollerBlockNode {
-    pub id: u32,
+    pub id: Uuid,
     pub block_type: String,
     pub tag: String,
     pub system_attributes: SystemAttributes,

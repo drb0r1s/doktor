@@ -1,11 +1,12 @@
 use serde::{Serialize, Deserialize};
+use uuid::Uuid;
 
 use crate::frontend::resolver::ast::system_attributes::SystemAttributes;
 use crate::frontend::resolver::ast::system_styles::SystemStyles;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ResolverBlockNode {
-    pub id: u32,
+    pub id: Uuid,
     pub block_type: String,
     pub tag: String,
     pub system_attributes: SystemAttributes,
