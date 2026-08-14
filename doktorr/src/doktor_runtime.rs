@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use uuid::Uuid;
 
 use wasm_bindgen::prelude::*;
 use web_sys::console;
@@ -18,7 +19,7 @@ use crate::parsed_doktorb::ParsedDoktorb;
 pub struct DoktorRuntime {
     viewport_width: f32,
     viewport_height: f32,
-    scroll_offsets: HashMap<u32, Location>,
+    scroll_offsets: HashMap<Uuid, Location>,
     latest_shaper_doktor_node: Option<ShaperDoktorNode>,
 }
 
@@ -74,7 +75,7 @@ impl DoktorRuntime {
             &JsValue::from_str("color: inherit;"),
         );
 
-        let parsed_doktorb = self.finalize(&shaper_doktor_node);
+        let parsed_doktorb = self.finalize(&shaper_doktor_node, true);
         
         self.latest_shaper_doktor_node = Some(shaper_doktor_node);
 
@@ -82,14 +83,16 @@ impl DoktorRuntime {
     }
 
     #[wasm_bindgen(js_name = updateScrollOffset)]
-    pub fn update_scroll_offset(&mut self, id: u32, x: f32, y: f32) -> Result<ParsedDoktorb, JsValue> {
+    pub fn update_scroll_offset(&mut self, string_id: String, x: f32, y: f32) -> Result<ParsedDoktorb, JsValue> {
+        let id: Uuid = Uuid::parse_str(&string_id).map_err(|e| JsValue::from_str(&e.to_string()))?;
+        
         self.scroll_offsets.insert(id, Location { x, y });
 
         let shaper_doktor_node = self.latest_shaper_doktor_node.as_ref().ok_or_else(|| JsValue::from_str("No prior layout to scroll"))?;
-        Ok(self.finalize(shaper_doktor_node))
+        Ok(self.finalize(shaper_doktor_node, false))
     }
 
-    fn finalize(&self, shaper_doktor_node: &ShaperDoktorNode) -> ParsedDoktorb {
+    fn finalize(&self, shaper_doktor_node: &ShaperDoktorNode, console_log: bool) -> ParsedDoktorb {
         let viewport_clip: Clip = Clip {
             x: (0.0, self.viewport_width),
             y: (0.0, self.viewport_height),
@@ -97,46 +100,52 @@ impl DoktorRuntime {
 
         let scroller_doktor_node = Scroller::new().scroll(shaper_doktor_node, viewport_clip, &self.scroll_offsets);
 
-        console::log_6(
-            &JsValue::from_str("%c[%cDOKTOR%c Runtime]%c (Scroller)%c AST has been built."),
-            &JsValue::from_str("color: orange;"),
-            &JsValue::from_str("color: orange; font-weight: bold;"),
-            &JsValue::from_str("color: orange;"),
-            &JsValue::from_str("color: orange; font-style: italic;"),
-            &JsValue::from_str("color: inherit;"),
-        );
+        if console_log {
+            console::log_6(
+                &JsValue::from_str("%c[%cDOKTOR%c Runtime]%c (Scroller)%c AST has been built."),
+                &JsValue::from_str("color: orange;"),
+                &JsValue::from_str("color: orange; font-weight: bold;"),
+                &JsValue::from_str("color: orange;"),
+                &JsValue::from_str("color: orange; font-style: italic;"),
+                &JsValue::from_str("color: inherit;"),
+            );
+        }
 
         let draw_structures = Painter::new().paint(scroller_doktor_node);
 
-        console::log_6(
-            &JsValue::from_str("%c[%cDOKTOR%c Runtime]%c (Painter)%c Scroller's AST has been converted to drawing structures."),
-            &JsValue::from_str("color: orange;"),
-            &JsValue::from_str("color: orange; font-weight: bold;"),
-            &JsValue::from_str("color: orange;"),
-            &JsValue::from_str("color: orange; font-style: italic;"),
-            &JsValue::from_str("color: inherit;"),
-        );
+        if console_log {
+            console::log_6(
+                &JsValue::from_str("%c[%cDOKTOR%c Runtime]%c (Painter)%c Scroller's AST has been converted to drawing structures."),
+                &JsValue::from_str("color: orange;"),
+                &JsValue::from_str("color: orange; font-weight: bold;"),
+                &JsValue::from_str("color: orange;"),
+                &JsValue::from_str("color: orange; font-style: italic;"),
+                &JsValue::from_str("color: inherit;"),
+            );
+        }
 
         let packed_packets = Packer::new().pack(&draw_structures);
 
-        console::log_6(
-            &JsValue::from_str("%c[%cDOKTOR%c Runtime]%c (Packer)%c Drawing structures have been packed."),
-            &JsValue::from_str("color: orange;"),
-            &JsValue::from_str("color: orange; font-weight: bold;"),
-            &JsValue::from_str("color: orange;"),
-            &JsValue::from_str("color: orange; font-style: italic;"),
-            &JsValue::from_str("color: inherit;"),
-        );
+        if console_log {
+            console::log_6(
+                &JsValue::from_str("%c[%cDOKTOR%c Runtime]%c (Packer)%c Drawing structures have been packed."),
+                &JsValue::from_str("color: orange;"),
+                &JsValue::from_str("color: orange; font-weight: bold;"),
+                &JsValue::from_str("color: orange;"),
+                &JsValue::from_str("color: orange; font-style: italic;"),
+                &JsValue::from_str("color: inherit;"),
+            );
 
-        console::log_7(
-            &JsValue::from_str("%c[%cDOKTOR%c Runtime]%c DOKTOR Binary %c(compiled.doktorb)%c has been executed."),
-            &JsValue::from_str("color: orange;"),
-            &JsValue::from_str("color: orange; font-weight: bold;"),
-            &JsValue::from_str("color: orange;"),
-            &JsValue::from_str("color: inherit;"),
-            &JsValue::from_str("font-style: italic;"),
-            &JsValue::from_str("font-style: normal;"),
-        );
+            console::log_7(
+                &JsValue::from_str("%c[%cDOKTOR%c Runtime]%c DOKTOR Binary %c(compiled.doktorb)%c has been executed."),
+                &JsValue::from_str("color: orange;"),
+                &JsValue::from_str("color: orange; font-weight: bold;"),
+                &JsValue::from_str("color: orange;"),
+                &JsValue::from_str("color: inherit;"),
+                &JsValue::from_str("font-style: italic;"),
+                &JsValue::from_str("font-style: normal;"),
+            );
+        }
 
         ParsedDoktorb::new(packed_packets.numeric_buffer, packed_packets.string_table)
     }
