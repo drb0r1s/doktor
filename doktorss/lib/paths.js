@@ -13,6 +13,8 @@ const EXE_NAME = process.platform === "win32" ? "doktorc.exe" : "doktorc";
 const DOKTORC_DEBUG_EXE = path.join(DOKTORC_DEBUG, EXE_NAME);
 const DOKTORC_EXE = path.join(DOKTORC_OUT, EXE_NAME);
 
+const PORT = 9999;
+
 module.exports = {
     ROOT,
     DOKTORC,
@@ -22,4 +24,5 @@ module.exports = {
     EXE_NAME,
     DOKTORC_DEBUG_EXE,
     DOKTORC_EXE,
+    PORT,
 };
