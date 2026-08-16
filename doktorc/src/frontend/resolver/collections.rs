@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use uuid::Uuid;
 
 use crate::frontend::parser_ast::ParserBlockNode;
 
@@ -117,6 +118,7 @@ impl Collections {
             let values = self.validate_value_types(&block, collection);
 
             let mut substituted_body = collection.body.clone();
+            Self::regenerate_ids(&mut substituted_body); // We need to make sure Collections produce new IDs, to prevent collisions.
             Self::substitute_block(&mut substituted_body, &values);
 
             expansion_stack.push(block.block_type.clone());
@@ -223,6 +225,14 @@ impl Collections {
 
         for child in &mut block.children {
             Self::substitute_block(child, values);
+        }
+    }
+
+    fn regenerate_ids(block: &mut ParserBlockNode) {
+        block.id = Uuid::new_v4();
+
+        for child in &mut block.children {
+            Self::regenerate_ids(child);
         }
     }
 }
