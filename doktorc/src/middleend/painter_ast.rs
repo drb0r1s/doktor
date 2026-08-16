@@ -39,6 +39,8 @@ pub struct Rectangle {
 pub struct Text {
     pub id: Uuid,
     pub location: Location,
+    pub width: f32,
+    pub height: f32,
     pub clip: Clip,
     pub content: String,
     pub content_color: RGB,

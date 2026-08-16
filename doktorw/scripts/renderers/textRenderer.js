@@ -1,5 +1,6 @@
 import { unpackColor } from "../functions/unpackColor.js";
 import { getFont } from "../functions/getFont.js";
+import { wrapByWord } from "../functions/wrapByWord.js";
 import { PACKET_STRUCTURE } from "../data/packetStructure.js";
 import { BORDER_TYPES } from "../data/borderTypes.js";
 
@@ -69,10 +70,26 @@ export class TextRenderer {
 
             const content = decoder.decode(stringTable.subarray(offset, offset + length));
 
+            const width = numericBuffer[rowStart + PACKET_STRUCTURE.PACKET_WIDTH];
             const metrics = context.measureText(content);
 
-            const textWidth = metrics.width;
-            const textHeight = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
+            const lineHeight = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
+
+            let lines, textWidth, textHeight;
+
+            if(width > 0) {
+                lines = wrapByWord(context, content, width);
+
+                textWidth = width;
+                textHeight = lineHeight * lines.length;
+            }
+            
+            else {
+                lines = [content];
+
+                textWidth = metrics.width;
+                textHeight = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
+            }
 
             context.save();
             context.beginPath();
@@ -90,7 +107,10 @@ export class TextRenderer {
             this.drawBorder(x + textWidth, y, 0, textHeight, borderRightColor, borderRightColorAlpha, borderRightSize, borderRightType);
 
             context.fillStyle = `rgba(${contentColor.r}, ${contentColor.g}, ${contentColor.b}, ${contentColorAlpha / 255})`;
-            context.fillText(content, x, y);
+            
+            lines.forEach((line, index) => {
+                context.fillText(line, x, y + index * lineHeight);
+            });
 
             context.globalAlpha = 1.0;
             context.restore();

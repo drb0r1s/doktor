@@ -1,4 +1,5 @@
 import { getTextMeasurementRequests, getImageMeasurementRequests } from "../../doktorr/pkg/doktorr.js";
+import { wrapByWord } from "./functions/wrapByWord.js";
 import { loadImage } from "./functions/loadImage.js";
 
 export const Measurer = {
@@ -22,12 +23,26 @@ function measureTexts(textMeasurementRequests) {
     return textMeasurementRequests.map(request => {
         measureContext.font = `${request.content_size}px ${request.content_font}`;
 
+        if(request.width && request.width > 0) {
+            const lines = wrapByWord(measureContext, request.content, request.width);
+            const lineMetrics = measureContext.measureText("A"); // "A" here is just for reference, it could be any character.
+            const lineHeight = lineMetrics.fontBoundingBoxAscent + lineMetrics.fontBoundingBoxDescent;
+
+            return {
+                path: request.path,
+                width: request.width,
+                height: lineHeight * lines.length,
+                lines,
+            };
+        }
+
         const metrics = measureContext.measureText(request.content);
 
         return {
             path: request.path,
             width: metrics.width,
             height: metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent,
+            lines: [request.content],
         };
     });
 }

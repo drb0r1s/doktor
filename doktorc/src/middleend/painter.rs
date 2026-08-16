@@ -66,6 +66,8 @@ impl Painter {
                 Some(DrawStructure::Text(Text {
                     id: block.id,
                     location: block.location,
+                    width: block.size.width,
+                    height: block.size.height,
                     clip: block.clip,
                     content,
                     content_color: block.system_styles.content_color,

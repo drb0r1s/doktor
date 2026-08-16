@@ -10,6 +10,7 @@ use doktorc::collections::font::Font;
 #[derive(Serialize)]
 struct TextMeasurementRequest {
     path: Vec<usize>,
+    width: f32,
     content: String,
     content_size: f32,
     content_font: Font,
@@ -32,6 +33,7 @@ fn collect_text_measurement_requests(nodes: &[ResolverBlockNode], path: &mut Vec
         if node.block_type == "Text" {
             requests.push(TextMeasurementRequest {
                 path: path.clone(),
+                width: node.system_styles.width,
                 content: node.system_attributes.content.clone().unwrap_or_default(),
                 content_size: node.system_styles.content_size,
                 content_font: node.system_styles.content_font,

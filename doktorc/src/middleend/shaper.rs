@@ -83,7 +83,7 @@ impl Shaper {
             if block.block_type == "Text" {
                 match text_measurements.iter().find(|text_measurement| &text_measurement.path == path) {
                     Some(measurement) => Size {
-                        width: measurement.width,
+                        width: if block.system_styles.width > 0.0 { block.system_styles.width } else { measurement.width },
                         height: measurement.height,
                     },
 

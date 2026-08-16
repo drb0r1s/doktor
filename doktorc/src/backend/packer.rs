@@ -93,6 +93,9 @@ impl Packer {
         row[packet_structure::PACKET_X] = text.location.x;
         row[packet_structure::PACKET_Y] = text.location.y;
 
+        row[packet_structure::PACKET_WIDTH] = text.width;
+        row[packet_structure::PACKET_HEIGHT] = text.height;
+
         row[packet_structure::PACKET_CLIP_X_START] = text.clip.x.0;
         row[packet_structure::PACKET_CLIP_X_END] = text.clip.x.1;
         row[packet_structure::PACKET_CLIP_Y_START] = text.clip.y.0;
