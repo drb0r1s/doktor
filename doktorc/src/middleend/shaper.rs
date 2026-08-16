@@ -285,6 +285,14 @@ impl Shaper {
             Direction::Vertical => parent_size.width,
         };
 
+        let breakable_overflow: Overflow = match parent_direction {
+            Direction::Horizontal => parent_styles.get_unambiguous_overflow("x"),
+            Direction::Vertical => parent_styles.get_unambiguous_overflow("y"),
+        };
+
+        // In case complementary overflow (horizontal => x, vertical => y) is not set to false, then we won't use regular wrapping.
+        let allow_wrap: bool = breakable_overflow == Overflow::False;
+
         let mut lines: Vec<Vec<&SizedResolverBlockNode>> = Vec::new();
         let mut current_line: Vec<&SizedResolverBlockNode> = Vec::new();
         
@@ -296,7 +304,7 @@ impl Shaper {
                 Direction::Vertical => child.size.height,
             };
 
-            if breakable_cursor > 0.0 && breakable_cursor + breakable_size > breakable_bound {
+            if allow_wrap && breakable_cursor > 0.0 && breakable_cursor + breakable_size > breakable_bound {
                 lines.push(std::mem::take(&mut current_line));
                 breakable_cursor = 0.0;
             }
